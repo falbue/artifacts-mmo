@@ -31,7 +31,13 @@ if map_details:
     print(f"Скин: {map_details['data']['skin']}")
     print(f"Позиция X: {map_details['data']['x']}")
     print(f"Позиция Y: {map_details['data']['y']}")
-    print(f"Тип контента: {map_details['data']['content']['type']}")
-    print(f"Код контента: {map_details['data']['content']['code']}")
+    
+    # Проверяем наличие контента
+    content = map_details['data'].get('content', None)
+    if content:
+        print(f"Тип контента: {content.get('type', 'Не указан')}")
+        print(f"Код контента: {content.get('code', 'Не указан')}")
+    else:
+        print("Контент карты отсутствует.")
 else:
     print("Не удалось получить детали карты.")
