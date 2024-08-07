@@ -19,7 +19,7 @@ response = requests.post(f"{URL}/my/{PLAYER}/action/fight", headers=HEADERS)
 
 # Обработка ответа
 if response.status_code == 200:
-    print("Враг побежден!")
+    print("Враг побежден")
 else:
     print(f"Ошибка: {response.status_code}")
     print(response.text)

@@ -1,6 +1,7 @@
 # БИБЛИОТЕКИ----------------------------
 import requests
 import json
+from http_status import http_status
 
 # ПЕРМЕННЫЕ----------------------------
 # конфиг
@@ -27,11 +28,4 @@ response = requests.post(f"{URL}/my/{PLAYER}/action/move", headers=HEADERS, json
 # Обработка ответа
 if response.status_code == 200:
     print("Персонаж успешно переместился!")
-elif response.status_code == 404:
-    print("Карта не найдена")
-elif response.status_code == 486:
-    print("Персонаж заблокирован. Действия уже ведутся")
-elif response.status_code == 490:
-    print("Персонаж уже в пункте назначения")
-else:
-    print("Персонаж не найден")
+http_status(response.status_code)
