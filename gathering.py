@@ -18,9 +18,13 @@ PLAYER = "Falbue" # имя персонажа
 
 # Выполнение запроса
 response = requests.post(f"{URL}/my/{PLAYER}/action/gathering", headers=HEADERS)
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/main
 
 # Обработка ответа
 if response.status_code == 200:
-    print("Ресурс добыт!")
+    print("Враг побежден")
 else:
     http_status(response.status_code)

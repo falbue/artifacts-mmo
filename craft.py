@@ -16,11 +16,12 @@ URL = config['url']
 PLAYER = "Falbue" # имя персонажа
 
 # Выполнение запроса
-response = requests.post(f"{URL}/my/{PLAYER}/action/craft ", headers=HEADERS)
+response = requests.post(f"{URL}/my/{PLAYER}/action/crafting", headers=HEADERS)
 
 # Обработка ответа
 if response.status_code == 200:
     print("Создан предмет!")
 else:
     print(f"Ошибка: {response.status_code}")
+
     print(response.text)

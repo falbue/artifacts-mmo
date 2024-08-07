@@ -18,6 +18,7 @@ PLAYER = "Falbue" # имя персонажа
 # Выполнение запроса
 response = requests.post(f"{URL}/my/{PLAYER}/action/fight", headers=HEADERS)
 
+
 # Обработка ответа
 if response.status_code == 200:
     print("Враг побежден")
