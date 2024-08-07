@@ -22,7 +22,7 @@ response = requests.post(f"https://api.artifactsmmo.com/my/{character_name}/acti
 
 # Обработка ответа
 if response.status_code == 200:
-    print(response.json())
+    print("Персонаж успешно переместился!")
 else:
     print(f"Ошибка: {response.status_code}")
     print(response.text)
