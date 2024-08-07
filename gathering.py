@@ -17,7 +17,7 @@ PLAYER = "Falbue" # имя персонажа
 
 
 # Выполнение запроса
-response = requests.post(f"{URL}/my/{PLAYER}/action/gathering", headers=HEADERS, json=data)
+response = requests.post(f"{URL}/my/{PLAYER}/action/gathering", headers=HEADERS)
 
 # Обработка ответа
 if response.status_code == 200:
