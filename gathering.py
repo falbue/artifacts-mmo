@@ -22,4 +22,5 @@ response = requests.post(f"{URL}/my/{PLAYER}/action/gathering", headers=HEADERS,
 # Обработка ответа
 if response.status_code == 200:
     print("Ресурс добыт!")
-http_status(response.status_code)
+else:
+    http_status(response.status_code)
