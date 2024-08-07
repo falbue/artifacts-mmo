@@ -14,7 +14,7 @@ HEADERS = config['headers']
 PLAYER = "Falbue" # имя персонажа
 
 # Выполнение запроса
-response = requests.post(f"https://api.artifactsmmo.com/my/{PLAYER}/action/fight", headers=headers)
+response = requests.post(f"https://api.artifactsmmo.com/my/{PLAYER}/action/fight", headers=HEADERS)
 
 # Обработка ответа
 if response.status_code == 200:
