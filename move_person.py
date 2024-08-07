@@ -28,7 +28,7 @@ response = requests.post(f"{URL}/my/{PLAYER}/action/move", headers=HEADERS, json
 
 # Обработка ответа
 if response.status_code == 200:
-    print("Враг побежден")
+    print("Персонаж успешно переместился!")
 else:
     http_status(response.status_code)
 
