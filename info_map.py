@@ -1,43 +1,55 @@
+# БИБЛИОТЕКИ----------------------------
 import requests
+import json
 
-def get_map(x, y):
-    url = f"https://api.artifactsmmo.com/maps/{x}/{y}"
-    headers = {
-        'Accept': 'application/json'
+# ПЕРЕМЕННЫЕ----------------------------
+# конфиг
+with open('config.json', 'r') as config_file:
+    config = json.load(config_file)
+
+TOKEN = config['token']
+HEADERS = config['headers']
+URL = config['url']
+
+x = 1
+y = 1
+
+# переменные скрипта
+PLAYER = "Falbue" # имя персонажа
+
+# Выполнение запроса
+response = requests.get(f"{URL}/maps/{x}/{y}", headers=HEADERS)
+
+# Получение данных
+data = response.json()
+
+# Преобразование данных в читаемый формат на русском языке
+readable_data = {
+    "данные": {
+        "название": data['data']['name'],
+        "скин": data['data']['skin'],
+        "координаты": {
+            "x": data['data']['x'],
+            "y": data['data']['y']
+        },
+        "содержимое": {
+            "тип": data['data']['content']['type'],
+            "код": data['data']['content']['code']
+        }
     }
+}
 
-    try:
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()  # Проверяет наличие ошибок HTTP
-
-        # Обрабатываем ответ в формате JSON
-        map_data = response.json()
-        return map_data
-
-    except requests.exceptions.HTTPError as http_err:
-        print(f"Произошла HTTP ошибка: {http_err}")
-    except Exception as err:
-        print(f"Произошла ошибка: {err}")
-
-# Пример использования функции
-x = 0  # Замените на нужное значение X
-y = 0  # Замените на нужное значение Y
-
-map_details = get_map(x, y)
-
-if map_details:
-    print("Детали карты успешно получены!")
-    print(f"Название: {map_details['data']['name']}")
-    print(f"Скин: {map_details['data']['skin']}")
-    print(f"Позиция X: {map_details['data']['x']}")
-    print(f"Позиция Y: {map_details['data']['y']}")
+# Функция для красивого вывода без отступов
+def pretty_print(data):
+    def print_dict(d):
+        for key, value in d.items():
+            if isinstance(value, dict):
+                print(f"{key}:")
+                print_dict(value)
+            else:
+                print(f"{key}: {value}")
     
-    # Проверяем наличие контента
-    content = map_details['data'].get('content', None)
-    if content:
-        print(f"Тип контента: {content.get('type', 'Не указан')}")
-        print(f"Код контента: {content.get('code', 'Не указан')}")
-    else:
-        print("Контент карты отсутствует.")
-else:
-    print("Не удалось получить детали карты.")
+    print_dict(data)
+
+# Вывод данных в красивом виде
+pretty_print(readable_data)
