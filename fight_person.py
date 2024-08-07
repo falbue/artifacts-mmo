@@ -8,13 +8,14 @@ with open('config.json', 'r') as config_file:
 
 TOKEN = config['token']
 HEADERS = config['headers']
+URL = config['url']
 
 
 # переменные скрипта
 PLAYER = "Falbue" # имя персонажа
 
 # Выполнение запроса
-response = requests.post(f"https://api.artifactsmmo.com/my/{PLAYER}/action/fight", headers=HEADERS)
+response = requests.post(f"{URL}/my/{PLAYER}/action/fight", headers=HEADERS)
 
 # Обработка ответа
 if response.status_code == 200:
