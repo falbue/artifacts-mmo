@@ -25,7 +25,10 @@ data = {
 # Выполнение запроса
 response = requests.post(f"{URL}/my/{PLAYER}/action/move", headers=HEADERS, json=data)
 
+
 # Обработка ответа
 if response.status_code == 200:
-    print("Персонаж успешно переместился!")
-http_status(response.status_code)
+    print("Враг побежден")
+else:
+    print(f"Ошибка: {response.status_code}")
+    print(response.text)
