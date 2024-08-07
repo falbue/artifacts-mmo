@@ -22,7 +22,13 @@ response = requests.post(f"{URL}/my/{PLAYER}/action/gathering", headers=HEADERS)
 
 # Обработка ответа
 if response.status_code == 200:
+<<<<<<< HEAD
     print("Враг побежден")
 else:
     print(f"Ошибка: {response.status_code}")
     print(response.text)
+=======
+    print("Ресурс добыт!")
+else:
+    http_status(response.status_code)
+>>>>>>> origin/main
