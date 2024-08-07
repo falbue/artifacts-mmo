@@ -1,5 +1,7 @@
+# БИБЛИОТЕКИ----------------------------
 import requests
 import json
+from http_status import http_status
 
 # ПЕРМЕННЫЕ----------------------------
 # конфиг
@@ -9,7 +11,6 @@ with open('config.json', 'r') as config_file:
 TOKEN = config['token']
 HEADERS = config['headers']
 URL = config['url']
-
 
 # переменные скрипта
 PLAYER = "Falbue" # имя персонажа
