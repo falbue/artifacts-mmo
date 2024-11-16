@@ -106,7 +106,7 @@ def send_request(request=None, body=None):
     if response.status_code == 200:
         data = response.json()
         data = data['data']
-        data = translate_data(data)
+        data =translate_data(data)
         return data
     else:
         http_status(response.status_code)
