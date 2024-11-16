@@ -2,6 +2,7 @@ from send_request import *
 from translate_data import *
 import time
 from plyer import notification
+from tg_notif import *
 
 name = 'Falbue'
 
@@ -29,3 +30,4 @@ while i != 24 - 11:
     print(f"Добыто {i} меди")
     
 notification.notify(title='Задача выполнена!', message='Ресурс добыт', timeout=10)
+tg_notif("Ресурс добыт")
