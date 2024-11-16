@@ -1,24 +1,8 @@
-# БИБЛИОТЕКИ----------------------------
-import requests
-import json
+
+from send_request import send_request
 
 # ПЕРЕМЕННЫЕ----------------------------
-# конфиг
-with open('config.json', 'r') as config_file:
-    config = json.load(config_file)
-
-TOKEN = config['token']
-HEADERS = config['headers']
-URL = config['url']
-
-# переменные скрипта
-PLAYER = "Falbue" # имя персонажа
-
-# Выполнение запроса
-response = requests.get(f"{URL}/my/characters", headers=HEADERS)
-
-# Получение данных
-data = response.json()
+data = send_request(request = "characters/Falbue")
 
 # Перевод ключей на русский
 translations = {
@@ -118,8 +102,8 @@ def print_data(data):
 
 # Вывод основных данных персонажа
 print("Основные данные персонажа:")
-print_data({k: v for k, v in translated_data['data'][0].items() if k != 'Инвентарь'})
+print(translated_data)
+print_data({k: v for k, v in translated_data['data'].items() if k != 'Инвентарь'})
 
 # Вывод инвентаря
-print("\nИнвентарь:")
-print_data({'Инвентарь': translated_data['data'][0]['Инвентарь']})
+print_data({'Инвентарь': translated_data['data']['Инвентарь']})
