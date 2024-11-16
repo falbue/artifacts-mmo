@@ -107,7 +107,6 @@ def send_request(request=None, body=None):
         data = response.json()
         data = data['data']
         data =translate_data(data)
-        print("Успешно!")
         return data
     else:
         http_status(response.status_code)
