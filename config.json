@@ -1,9 +1,0 @@
-{
-  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6IkZhbGJ1ZSIsInBhc3N3b3JkX2NoYW5nZWQiOiIifQ.rgxtPlIeKnAd3E7RKTdSTv60oLbVN5BqeOks8hmqxpk",
-  "url": "https://api.artifactsmmo.com",
-  "headers": {
-    "Accept": "application/json",
-    "Content-Type": "application/json",
-    "Authorization": "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6IkZhbGJ1ZSIsInBhc3N3b3JkX2NoYW5nZWQiOiIifQ.rgxtPlIeKnAd3E7RKTdSTv60oLbVN5BqeOks8hmqxpk"
-  }
-}
