@@ -75,7 +75,7 @@ def http_status(status_code):
     
     # Получаем сообщение из словаря или используем стандартное сообщение
     message = status_messages.get(status_code, f"Неизвестный код состояния {status_code}")
-    print(message)
+    print(status_code, message)
 
 def send_request(request=None, body=None): 
     if request is None:
