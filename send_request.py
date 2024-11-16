@@ -1,5 +1,15 @@
 import requests
 import json
+import os
+
+config_data = {
+        "url": "https://api.artifactsmmo.com",
+        "headers": {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": "Bearer token..."
+        }
+    }
 
 def http_status(status_code):
     status_messages = {
@@ -65,15 +75,24 @@ def http_status(status_code):
     message = status_messages.get(status_code, f"Неизвестный код состояния {status_code}")
     print(status_code, message)
 
-def send_request(character = None, request=None): 
-    if request == None:
+def send_request(character=None, request=None): 
+    if request is None:
         print("Введите запрос!")
         return   
 
+    # Проверяем существует ли файл config.json
+    if not os.path.exists('config.json'):
+        print("Файл config.json не найден, создается новый.")
+        with open('config.json', 'w') as config_file:
+            json.dump(config_data, config_file, indent=4)
+
+    # Загружаем конфигурацию из файла
     with open('config.json', 'r') as config_file:
         config = json.load(config_file)
 
-    TOKEN = config['token']
+    if config['headers'] == config_data['headers']:
+        print("Введите токен в файл config.json\nПолучить токен: https://artifactsmmo.com/account")
+        return
     HEADERS = config['headers']
     URL = config['url']
 
@@ -83,5 +102,5 @@ def send_request(character = None, request=None):
         data = response.json()
         return data
     else:
-        http_status(response.status_code)
+        print(f"Ошибка {response.status_code}: Не удалось выполнить запрос.")
         print(f"Отправленный запрос: {URL}/{request}")
