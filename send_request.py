@@ -73,9 +73,9 @@ def http_status(status_code):
     
     # Получаем сообщение из словаря или используем стандартное сообщение
     message = status_messages.get(status_code, f"Неизвестный код состояния {status_code}")
-    print(status_code, message)
+    print(message)
 
-def send_request(character=None, request=None): 
+def send_request(request=None, body=None): 
     if request is None:
         print("Введите запрос!")
         return   
@@ -96,11 +96,14 @@ def send_request(character=None, request=None):
     HEADERS = config['headers']
     URL = config['url']
 
-    response = requests.get(f"{URL}/{request}", headers=HEADERS)
+    if body:
+        response = requests.post(f"{URL}/{request}", headers=HEADERS, json=body)
+    else:
+        response = requests.get(f"{URL}/{request}", headers=HEADERS)
 
     if response.status_code == 200:
         data = response.json()
         return data
     else:
-        print(f"Ошибка {response.status_code}: Не удалось выполнить запрос.")
+        http_status(response.status_code)
         print(f"Отправленный запрос: {URL}/{request}")
