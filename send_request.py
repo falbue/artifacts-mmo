@@ -1,6 +1,7 @@
 import requests
 import json
 import os
+from translate_data import *
 
 config_data = {
         "url": "https://api.artifactsmmo.com",
@@ -16,6 +17,7 @@ def http_status(status_code):
         422: "Неверный формат данных",
         404: "Не найдено",
         500: "Фатальная ошибка",
+        405: "Нужно изменить тип запроса на post. Введите в запрос body=True",
 
         452: "Не правильный токен",
         453: "Токен истек",
@@ -35,7 +37,7 @@ def http_status(status_code):
         487: "Персонаж не имеет задачи",
         488: "Задача не завершена",
         489: "Персонаж уже в задаче",
-        490: "Персонаж уже на другой карте",
+        490: "Персонаж уже в выбраном месте",
         491: "Ошибка слота экипировки персонажа",
         492: "Недостаточно золота у персонажа",
         493: "Персонаж не имеет необходимого уровня навыка",
@@ -103,6 +105,8 @@ def send_request(request=None, body=None):
 
     if response.status_code == 200:
         data = response.json()
+        data = data['data']
+        data = translate_data(data)
         return data
     else:
         http_status(response.status_code)
