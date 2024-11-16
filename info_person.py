@@ -102,7 +102,6 @@ def print_data(data):
 
 # Вывод основных данных персонажа
 print("Основные данные персонажа:")
-print(translated_data)
 print_data({k: v for k, v in translated_data['data'].items() if k != 'Инвентарь'})
 
 # Вывод инвентаря
