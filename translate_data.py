@@ -1,9 +1,3 @@
-
-from send_request import send_request
-
-# ПЕРЕМЕННЫЕ----------------------------
-data = send_request(request = "characters/Falbue")
-
 # Перевод ключей на русский
 translations = {
     'name': 'Имя',
@@ -53,8 +47,8 @@ translations = {
     'res_air': 'Сопротивление воздуху',
     'x': 'Координата X',
     'y': 'Координата Y',
-    'cooldown': 'Перезарядка',
-    'cooldown_expiration': 'Окончание перезарядки',
+    'cooldown': 'Кулдаун',
+    'cooldown_expiration': 'Окончание кулдауна',
     'weapon_slot': 'Оружие',
     'shield_slot': 'Щит',
     'helmet_slot': 'Шлем',
@@ -76,33 +70,36 @@ translations = {
     'task_progress': 'Прогресс задачи',
     'task_total': 'Всего задач',
     'inventory_max_items': 'Максимум предметов в инвентаре',
-    'inventory': 'Инвентарь'
+    'inventory': 'Инвентарь',
+    'total_seconds': "Всего секунд",
+    'quantity': "Количество",
+    'slot': "Слот",
+    'feather': "Перо",
+    'code': "Название"
 }
 
 # Функция для перевода данных на русский
-def translate_data(data, translations):
+def translate_data(data):
     if isinstance(data, list):
-        return [translate_data(item, translations) for item in data]
+        return [translate_data(item) for item in data]
     elif isinstance(data, dict):
-        return {translations.get(k, k): translate_data(v, translations) for k, v in data.items()}
+        return {translations.get(k, k): translate_data(v) for k, v in data.items()}
     else:
         return data
 
-translated_data = translate_data(data, translations)
+def print_data(data, indent=0):
+    # Если data - словарь
+    if isinstance(data, dict):
+        for key, value in data.items():
+            print_data("  " * indent + f"{key}: {value}")  # увеличиваем отступ для значений словаря
 
-# Функция для красивого вывода данных
-def print_data(data):
-    for key, value in data.items():
-        if isinstance(value, list):
-            print(f"\n{key}:")
-            for item in value:
-                print(f"  {item}")
-        else:
-            print(f"{key}: {value}")
+    # Если data - список
+    elif isinstance(data, list):
+        for item in data:
+            print("  " * indent + "-")  # выводим элемент списка с отступом
+            print_data(item, indent + 1)  # рекурсивно вызываем для элемента
 
-# Вывод основных данных персонажа
-print("Основные данные персонажа:")
-print_data({k: v for k, v in translated_data['data'].items() if k != 'Инвентарь'})
+    # Если data - примитив (например, строка или число)
+    else:
+        print("  " * indent + f"{data}")  # выводим примитивное значение с отступом
 
-# Вывод инвентаря
-print_data({'Инвентарь': translated_data['data']['Инвентарь']})
