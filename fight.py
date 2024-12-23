@@ -18,4 +18,3 @@ def fight(name, time_work=None):
 	    print(f"Бой {i} закончен")
     
 	notification.notify(title='Задача выполнена!', message='Бой закончен!', timeout=10)
-	tg_notif("Бой закончен!")
