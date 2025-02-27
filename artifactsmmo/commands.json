@@ -1,0 +1,5 @@
+{
+	"maps":"maps",
+	"move":"my/{character}/action/move:{'x':null, 'y':null}",
+	"character_info":"characters/{character}"
+}

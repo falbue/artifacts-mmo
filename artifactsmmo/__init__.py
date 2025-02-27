@@ -1,0 +1,1 @@
+from artifactsmmo.mmo_request import mmo_request
