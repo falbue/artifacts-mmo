@@ -1,5 +1,7 @@
 {
-	"maps":"maps",
+	"maps_resource":"maps?content_type=resource",
+	"my_characters":"my/characters",
 	"move":"my/{character}/action/move:{'x':null, 'y':null}",
+	"gathering":"my/{character}/action/gathering",
 	"character_info":"characters/{character}"
 }

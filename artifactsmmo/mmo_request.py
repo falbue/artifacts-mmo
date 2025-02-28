@@ -42,27 +42,36 @@ def mmo_request(character=None, token="", command="", body=None):
     if command != "":
         with open(commands_path, 'r', encoding='utf-8') as file:
             commands = json.load(file)
-            command_text = commands[command].split(":")[0]
-            if len(commands[command].split(":")) > 1:
-                command_body = commands[command].replace(f"{command_text}:", "")
+            command_text = commands.get(command)
+            if command_text is None:
+                command_text = command
+            command_text_1 = command_text.split(":")[0]
+            if len(command_text.split(":")) > 1:
+                command_body = commands[command].replace(f"{command_text_1}:", "")
             format_dict = {"character": character}
-            command = command_text.format_map({key: format_dict.get(key, None) for key in re.findall(r'\{(.*?)\}', command_text)})
+            command = command_text_1.format_map({key: format_dict.get(key, None) for key in re.findall(r'\{(.*?)\}', command_text_1)})
+
+    # print(command)
 
     if command_body:
         body = process_command(command_body, body)
+        print(body)
 
     if body:
-        response = requests.post(f"https://api.artifactsmmo.com/{command}", headers={"Authorization": f"Bearer {token}"}, json=body
-)
+        if body == True:
+            response = requests.post(f"https://api.artifactsmmo.com/{command}", headers={"Authorization": f"Bearer {token}"})
+        else:
+            response = requests.post(f"https://api.artifactsmmo.com/{command}", headers={"Authorization": f"Bearer {token}"}, json=body)
     else:
-        response = requests.get(f"https://api.artifactsmmo.com/{command}", headers={"headers":token})
+        response = requests.get(f"https://api.artifactsmmo.com/{command}", headers={"Authorization": f"Bearer {token}"})
 
     data = response.json()
-    data = data.get('data')
-    if data is None:
+    if data.get('error'):
         with open(error_path, 'r', encoding='utf-8') as file:
             errors = json.load(file)
-            data = errors[f"{response.status_code}"]
+            data = errors.get(f"{response.status_code}")
+            if data is None:
+                data = response.json()
     data = translate_data(data)
     return data
 
