@@ -35,3 +35,9 @@ def load_file(filename):
         with open(filepath, 'r', encoding='utf-8') as f:
             return json.load(f)
     return None
+
+def print_mmo(data):
+    if isinstance(data, (dict, list)):
+        print( json.dumps(data, indent=4, ensure_ascii=False))
+    else:
+        print( str(data))
