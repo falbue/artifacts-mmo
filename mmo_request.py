@@ -3,8 +3,17 @@ import json
 import os
 import re
 
+import os
+from dotenv import load_dotenv
+import logger
+
+logger = logger.setup(True)
+
+load_dotenv()
+
+TOKEN = os.getenv("TOKEN")
+
 package_dir = os.path.dirname(os.path.abspath(__file__))
-commands_path = os.path.join(package_dir, "commands.json")
 localize_path = os.path.join(package_dir, "localize_ru.json")
 error_path = os.path.join(package_dir, "errors_ru.json")
 
