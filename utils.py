@@ -28,3 +28,10 @@ def save_file(filename, data):
     except Exception as e:
         logger.error(f"Ошибка при сохранении файла: {e}")
         return False
+
+def load_file(filename):
+    filepath = os.path.join('data', filename)
+    if os.path.exists(filepath):
+        with open(filepath, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    return None
