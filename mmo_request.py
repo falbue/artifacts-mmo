@@ -77,7 +77,7 @@ def mmo_request(character=None, token="", command="", body=None):
 
 
 
-#     // data = send_request('maps/2/0')  # получение инофрмации о карте
+# data = mmo_request(command='maps/2/0')  # получение инофрмации о карте
 # // data = send_request('items')  # получение инофрмации о предметах
 # // data = send_request('items/wooden_shield')  # получение инофрмации об указаном предмете
 # // data = send_request(f'my/{name}/action/rest', True)  # лечение
