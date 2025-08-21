@@ -72,5 +72,6 @@ def mmo_request(command="", body=None, cooldown=False):
                 return 0
             if data == "Персонаж в кулдауне":
                 return 60
-            data = data["data"]["Кулдаун"]['Всего секунд']
+            if not data.get('error'):
+                data = data["data"]["Кулдаун"]['Всего секунд']
     return data
