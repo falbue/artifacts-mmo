@@ -46,33 +46,16 @@ def process_command(command_body, body):
     return body_dict
     
 
-def mmo_request(character=None, token="", command="", body=None):
-    command_body = None
-    if command != "":
-        with open(commands_path, 'r', encoding='utf-8') as file:
-            commands = json.load(file)
-            command_text = commands.get(command)
-            if command_text is None:
-                command_text = command
-            command_text_1 = command_text.split(":")[0]
-            if len(command_text.split(":")) > 1:
-                command_body = commands[command].replace(f"{command_text_1}:", "")
-            format_dict = {"character": character}
-            command = command_text_1.format_map({key: format_dict.get(key, None) for key in re.findall(r'\{(.*?)\}', command_text_1)})
-
-    # print(command)
-
-    if command_body:
-        body = process_command(command_body, body)
-        print(body)
-
+def mmo_request(command="", body=None, cooldown=False):
+    if command.startswith('/'):
+        command = command[1:]
     if body:
         if body == True:
-            response = requests.post(f"https://api.artifactsmmo.com/{command}", headers={"Authorization": f"Bearer {token}"})
+            response = requests.post(f"https://api.artifactsmmo.com/{command}", headers={"Authorization": f"Bearer {TOKEN}"})
         else:
-            response = requests.post(f"https://api.artifactsmmo.com/{command}", headers={"Authorization": f"Bearer {token}"}, json=body)
+            response = requests.post(f"https://api.artifactsmmo.com/{command}", headers={"Authorization": f"Bearer {TOKEN}"}, json=body)
     else:
-        response = requests.get(f"https://api.artifactsmmo.com/{command}", headers={"Authorization": f"Bearer {token}"})
+        response = requests.get(f"https://api.artifactsmmo.com/{command}", headers={"Authorization": f"Bearer {TOKEN}"})
 
     data = response.json()
     if data.get('error'):
@@ -81,18 +64,13 @@ def mmo_request(character=None, token="", command="", body=None):
             data = errors.get(f"{response.status_code}")
             if data is None:
                 data = response.json()
+        data = translate_data(data)
+        logger.error(data)
     data = translate_data(data)
+    if cooldown:
+            if data == "Персонаж уже в выбраном месте":
+                return 0
+            if data == "Персонаж в кулдауне":
+                return 60
+            data = data["data"]["Кулдаун"]['Всего секунд']
     return data
-
-
-
-# data = mmo_request(command='maps/2/0')  # получение инофрмации о карте
-# // data = send_request('items')  # получение инофрмации о предметах
-# // data = send_request('items/wooden_shield')  # получение инофрмации об указаном предмете
-# // data = send_request(f'my/{name}/action/rest', True)  # лечение
-# // data = send_request("my/Falbue/action/fight", True) # бой
-# // data = send_request("my/Falbue/action/gathering", True) # добыча
-# // data = send_request("my/Falbue/action/crafting", {'code':'ash_plank', "quantity": 1}) # крафт
-# // data = send_request(f'my/{name}/action/equip', {"code": "copper_ring", "slot": "ring1", "quantity": 1})  # надеть предмет
-# // data = send_request(f'my/{name}/action/equip', {"slot": "weapon", "quantity": 1})  # снять предмет
-# // data = send_request(f'my/{name}/action/grandexchange/sell', {"code": "yellow_slimeball", "quantity": 60, "price": 100})  # Создать сделку
