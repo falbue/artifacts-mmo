@@ -41,3 +41,24 @@ def print_mmo(data):
         print( json.dumps(data, indent=4, ensure_ascii=False))
     else:
         print( str(data))
+
+def find_objects(data, target_code):
+    results = []
+    
+    for item in data:
+        if (item.get("Контент") and 
+            isinstance(item["Контент"], dict) and 
+            item["Контент"].get("Код") == target_code):
+            
+            x = item.get("x")
+            y = item.get("y")
+            
+            if x is not None and y is not None:
+                results.append({"x": x, "y": y})
+    
+    if not results:
+        return None
+    elif len(results) == 1:
+        return results[0]
+    else:
+        return results
