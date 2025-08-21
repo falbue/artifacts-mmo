@@ -58,4 +58,16 @@ def gathering(name, cooldown, quantity):
 
 # scan_maps()
 mining_resource(character="all", resource="copper_rocks", quantity=20)
-# data = mmo_request(f"/my/Falbue/action/move", {"x":"0","y":"0"})
+# data = mmo_request(f"/my/Falbue/action/move", {"x":"0","y":"0"})def fight(name, cooldown, quantity):
+    logger.debug(f"{name} начал бой")
+    time.sleep(int(cooldown))
+    for i in range(quantity):
+        cooldown = mmo_request(f"/my/{name}/action/fight", True, True)
+        time.sleep(cooldown)
+
+def craft(name, cooldown, quantity):
+    logger.debug(f"{name} начал крафт")
+    time.sleep(int(cooldown))
+    for i in range(quantity):
+        cooldown = mmo_request("/my/{name}/action/crafting", True, True)
+        time.sleep(cooldown)
