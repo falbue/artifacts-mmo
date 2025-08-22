@@ -1,5 +1,6 @@
 from mmo_request import mmo_request
 from utils import *
+from commands import *
 
 def scan_maps():
     maps_file = "maps.json"
