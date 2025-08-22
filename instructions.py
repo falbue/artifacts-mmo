@@ -109,11 +109,13 @@ def fighting(character="all", resource=None, quantity=1):
 def crafting(character="all", resource=None, quantity=1):
     names = load_characters(character)
     for name in names:
-        maps = scan_maps()
-        coordinats = find_objects(maps, resource)
-        cooldown = 0
+        items = scan_items()
+        for item in items:
+            if item.get("Код") == resource:
+                craftable = item["craft"]["skill"]
+                coordinats = find_workshop(craftable)
         cooldown = mmo_request(f"/my/{name}/action/move", coordinats, cooldown=True)
-        thread = threading.Thread(target=craft, args=(name, cooldown, quantity))
+        thread = threading.Thread(target=craft, args=(name, resource, cooldown, quantity))
         thread.start()
 
 # scan_maps()
