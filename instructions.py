@@ -60,6 +60,18 @@ def scan_items():
     save_file(file, cache_data)
     return items
 
+def find_workshop(craftable):
+    results = []
+    maps = scan_maps()
+    for item in maps:
+        if item.get("Контент"):
+            if item["Контент"].get("Код") == craftable:
+                x = item.get("x")
+                y = item.get("y")
+                if x is not None and y is not None:
+                   results.append({"x": x, "y": y})
+    return results[0]
+
 def load_characters(character):
     characters = mmo_request("/my/characters")
     names = []
