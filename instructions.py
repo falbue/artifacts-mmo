@@ -119,8 +119,5 @@ def crafting(character="all", resource=None, quantity=1):
         thread.start()
 
 # scan_maps()
-# mining_resource(character="all", resource="copper_rocks", quantity=100)
-# crafting(character="all", resource="mining", quantity=10)
-# data = mmo_request(f"/items")
-# print_mmo(data)
-scan_items()
+# mining_resource(character="all", resource="ash_tree", quantity=1)
+crafting(character="all", resource="copper_helmet", quantity=1)
