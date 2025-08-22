@@ -15,9 +15,8 @@ def fight(name, cooldown, quantity):
         cooldown = mmo_request(f"/my/{name}/action/fight", True, True)
         time.sleep(cooldown)
 
-def craft(name, cooldown, quantity):
+def craft(name, resource, cooldown, quantity):
     logger.debug(f"{name} начал крафт")
     time.sleep(int(cooldown))
-    for i in range(quantity):
-        cooldown = mmo_request("/my/{name}/action/crafting", True, True)
-        time.sleep(cooldown)
+    cooldown = mmo_request(f"/my/{name}/action/crafting", {"code":resource, "quantity":quantity}, True)
+    time.sleep(cooldown)
