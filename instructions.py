@@ -31,7 +31,7 @@ def fighting(character="all", resource=None, quantity=1):
 
 
 def crafting(character="all", resource=None, quantity=1):
-    names = load_characters(character)
+    characters = load_characters(character)
     for character in characters:
         name = character["Имя"]
         items = scan_items()
