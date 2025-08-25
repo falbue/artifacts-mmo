@@ -62,3 +62,22 @@ def find_objects(data, target_code):
         return results[0]
     else:
         return results
+
+def nearest_object(object_coordinates, character_coordinates):
+    if not object_coordinates:
+        return None
+    
+    min_squared_distance = float('inf')
+    nearest_obj = None
+    
+    for obj in object_coordinates:
+        # Вычисляем квадрат расстояния (быстрее, чем евклидово расстояние)
+        dx = obj['x'] - character_coordinates['x']
+        dy = obj['y'] - character_coordinates['y']
+        squared_distance = dx*dx + dy*dy
+        
+        if squared_distance < min_squared_distance:
+            min_squared_distance = squared_distance
+            nearest_obj = obj
+    
+    return nearest_obj
