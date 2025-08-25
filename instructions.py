@@ -43,5 +43,18 @@ def crafting(character="all", resource=None, quantity=1):
         thread = threading.Thread(target=craft, args=(name, resource, cooldown, quantity))
         thread.start()
 
-mining_resource(character="all", resource="ash_tree", quantity=1)
-# crafting(character="all", resource="copper_helmet", quantity=1)
+def equip_item(character="all", item="", quantity=1):
+    slot = scan_items(item)
+    if slot:
+        slot = slot["Тип"]
+        body = {
+        "code": item,
+        "slot": slot,
+        "quantity": quantity
+        }
+    else:return
+
+    characters = load_characters(character)
+    for character in characters:
+        name = character["Имя"]
+        mmo_request(f"/my/{name}/action/equip", body)
