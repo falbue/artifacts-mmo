@@ -65,15 +65,14 @@ def mmo_request(command="", body=None, cooldown=False):
             if data is None:
                 data = response.json()
         data = translate_data(data)
-        logger.error(f"{data} {command} {body}")
+        logger.error(f"{response.status_code} {data} {command} {body}")
+        data = int(response.status_code)
     data = translate_data(data)
     if cooldown:
-            if data == "Персонаж уже в выбраном месте":
+            if data == 490:
                 return 0
-            if data == "Персонаж в кулдауне":
+            if data == 499:
                 return 60
-            if not isinstance(data, str):
-                data = data["data"]["Кулдаун"]['Всего секунд']
             else:
                 return 0
     return data
