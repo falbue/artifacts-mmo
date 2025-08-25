@@ -30,33 +30,39 @@ def scan_maps():
     save_file(maps_file, cache_data)
     return maps
 
-def scan_items():
-    file = "items.json"
-    cache_data = load_file(file)
-    if cache_data is not None:
-        if isinstance(cache_data, dict) and 'timestamp' in cache_data and 'data' in cache_data:
-            cache_time = datetime.fromisoformat(cache_data['timestamp'])
-            
-        if datetime.now() - cache_time < timedelta(hours=1):
-            logger.debug("Данные из кеша")
-            return cache_data['data']
-    
-    logger.debug("Cканирование ресурсов...")
-    items = []
-    data = mmo_request("/items?size=100")
-    pages = data["pages"]
-    
-    for i in range(pages):
-        command = f"/items?size=100&page={i+1}"
-        data = mmo_request(command)
-        items.extend(data["data"])
-    
-    cache_data = {
-        'timestamp': datetime.now().isoformat(),
-        'data': items
-    }
-    
-    save_file(file, cache_data)
+def scan_items(all_items=True):
+    if all_items is True:
+        file = "items.json"
+        cache_data = load_file(file)
+        if cache_data is not None:
+            if isinstance(cache_data, dict) and 'timestamp' in cache_data and 'data' in cache_data:
+                cache_time = datetime.fromisoformat(cache_data['timestamp'])
+                
+            if datetime.now() - cache_time < timedelta(hours=1):
+                logger.debug("Данные из кеша")
+                return cache_data['data']
+        
+        logger.debug("Cканирование ресурсов...")
+        items = []
+        data = mmo_request("/items?size=100")
+        pages = data["pages"]
+        
+        for i in range(pages):
+            command = f"/items?size=100&page={i+1}"
+            data = mmo_request(command)
+            items.extend(data["data"])
+        
+        cache_data = {
+            'timestamp': datetime.now().isoformat(),
+            'data': items
+        }
+        
+        save_file(file, cache_data)
+    elif isinstance(all_items, str):
+        items = mmo_request(f"items/{all_items}")
+        if isinstance(items, dict):
+            items = items["data"]
+        else: items = None
     return items
 
 def find_workshop(craftable):
