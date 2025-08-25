@@ -9,7 +9,8 @@ def mining_resource(character="all", resource=None, quantity=1):
         name = character["Имя"]
         maps = scan_maps()
         coordinates = find_objects(maps, resource)
-        if len(coordinates) > 1:
+        if len(coordinates) > 1 and isinstance(coordinates, list):
+            print(coordinates, len(coordinates))
             coordinates = nearest_object(coordinates, {"x":character["x"],"y":character["y"]})
         cooldown = 0
         cooldown = mmo_request(f"/my/{name}/action/move", coordinates, cooldown=True)
