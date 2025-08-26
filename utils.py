@@ -65,7 +65,7 @@ def find_resource(resource_code):
     if target_item["Тип"] != "resource":
         return None
 
-    skill_type = target_item["subtype"]
+    skill_type = target_item["Подтип"]
 
     target_resource_codes = []
     for resource in resources:

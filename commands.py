@@ -42,7 +42,7 @@ scan_data("maps")
 
 def find_workshop(craftable):
     results = []
-    maps = scan_maps()
+    maps = scan_data("maps")
     for item in maps:
         if item.get("Контент"):
             if item["Контент"].get("Код") == craftable:
@@ -101,7 +101,7 @@ def fight(name, cooldown, quantity):
         time.sleep(cooldown)
 
 def craft(name, resource, cooldown, quantity):
-    logger.debug(f"{name} начал крафт")
     time.sleep(int(cooldown))
+    logger.debug(f"{name} начал крафт")
     cooldown = request_mmo(f"/my/{name}/action/crafting", {"code":resource, "quantity":quantity}, True)
     time.sleep(cooldown)

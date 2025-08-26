@@ -22,7 +22,7 @@ def crafting(character="all", resource=None, quantity=1):
     characters = load_characters(character)
     for character in characters:
         name = character["Имя"]
-        items = scan_items()
+        items = scan_data("items")
         for item in items:
             if item.get("Код") == resource:
                 craftable = item["craft"]["skill"]
@@ -47,4 +47,5 @@ def equip_item(character="all", item="", quantity=1):
         name = character["Имя"]
         request_mmo(f"/my/{name}/action/equip", body)
 
-mining_resource(character=1, resource="ruby_stone", quantity=1)
+# mining_resource(character="katya", resource="copper_ore", quantity=1)
+crafting("Falbue", "copper_bar", 2)
