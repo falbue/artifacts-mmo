@@ -106,12 +106,19 @@ def gathering(character, quantity, resource):
     
     logger.info(f"{character['Имя']} добыл {gathered_count} {resource}")
 
-def fight(name, cooldown, quantity):
-    logger.debug(f"{name} начал бой")
-    time.sleep(int(cooldown))
+def fight(character, cooldown, quantity):
+    if cooldown > 0:
+        logger.debug(f"{character['Имя']} начнёт бой через {cooldown} сек")
+        time.sleep(int(cooldown))
+    restore_health(character)
     for i in range(quantity):
-        cooldown = request_mmo(f"/my/{name}/action/fight", True, True)
+        data = request_mmo(f"/my/{character['Имя']}/action/fight", True)
+        if data == 598:
+            logger.info(f"{character["Имя"]} умер!")
+            return
+        cooldown = data["data"]["Кулдаун"]["Всего секунд"]
         time.sleep(cooldown)
+        restore_health(data["data"]["character"])
 
 def craft(name, resource, cooldown, quantity):
     time.sleep(int(cooldown))
