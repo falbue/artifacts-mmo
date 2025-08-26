@@ -8,24 +8,13 @@ def mining_resource(character="all", resource=None, quantity=1):
     for character in characters:
         name = character["Имя"]
         maps = scan_maps()
-        coordinates = find_objects(maps, resource)
+        coordinates = find_resource(maps, resource)
         if len(coordinates) > 1 and isinstance(coordinates, list):
             coordinates = nearest_object(coordinates, {"x":character["x"],"y":character["y"]})
-        cooldown = 0
-        cooldown = request_mmo(f"/my/{name}/action/move", coordinates, cooldown=True)
-        thread = threading.Thread(target=gathering, args=(name, cooldown, quantity))
-        thread.start()
-
-
-def fighting(character="all", resource=None, quantity=1):
-    characters = load_characters(character)
-    for character in characters:
-        name = character["Имя"]
-        maps = scan_maps()
-        coordinates = find_objects(maps, resource)
-        cooldown = 0
-        cooldown = request_mmo(f"/my/{name}/action/move", coordinates, cooldown=True)
-        thread = threading.Thread(target=gathering, args=(name, cooldown, quantity))
+        cooldown = character_cooldown(character["Окончание кулдауна"])
+        request_mmo(f"/my/{name}/action/move", coordinates, cooldown)
+        character = load_characters(name)[0]
+        thread = threading.Thread(target=gathering, args=(character, quantity))
         thread.start()
 
 
