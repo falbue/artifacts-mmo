@@ -1,69 +1,44 @@
 from request_mmo import request_mmo
 from utils import *
 
-def scan_maps():
-    maps_file = "maps.json"
-    cache_data = load_file(maps_file)
-    if cache_data is not None:
-        if isinstance(cache_data, dict) and 'timestamp' in cache_data and 'data' in cache_data:
-            cache_time = datetime.fromisoformat(cache_data['timestamp'])
-            
-        if datetime.now() - cache_time < timedelta(hours=1):
-            logger.debug("Данные из кеша")
-            return cache_data['data']
-    
-    logger.debug("Cканирование карт...")
-    maps = []
-    data = request_mmo("/maps?size=100")
-    pages = data["pages"]
-    
-    for i in range(pages):
-        command = f"/maps?size=100&page={i+1}"
-        data = request_mmo(command)
-        maps.extend(data["data"])
-    
-    cache_data = {
-        'timestamp': datetime.now().isoformat(),
-        'data': maps
-    }
-    
-    save_file(maps_file, cache_data)
-    return maps
-
-def scan_items(all_items=True):
-    if all_items is True:
-        file = "items.json"
-        cache_data = load_file(file)
+def scan_data(data_type="maps", all_data=True):
+    if all_data is True:
+        cache_file = f"{data_type}.json"
+        cache_data = load_file(cache_file)
+        
         if cache_data is not None:
             if isinstance(cache_data, dict) and 'timestamp' in cache_data and 'data' in cache_data:
                 cache_time = datetime.fromisoformat(cache_data['timestamp'])
                 
-            if datetime.now() - cache_time < timedelta(hours=1):
-                logger.debug("Данные из кеша")
-                return cache_data['data']
+                if datetime.now() - cache_time < timedelta(hours=1):
+                    logger.debug("Данные из кеша")
+                    return cache_data['data']
         
-        logger.debug("Cканирование ресурсов...")
-        items = []
-        data = request_mmo("/items?size=100")
-        pages = data["pages"]
+        logger.debug(f"Cканирование {data_type}...")
+        data_list = []
+        initial_data = request_mmo(f"/{data_type}?size=100")
+        pages = initial_data["pages"]
         
         for i in range(pages):
-            command = f"/items?size=100&page={i+1}"
-            data = request_mmo(command)
-            items.extend(data["data"])
+            command = f"/{data_type}?size=100&page={i+1}"
+            page_data = request_mmo(command)
+            data_list.extend(page_data["data"])
         
         cache_data = {
             'timestamp': datetime.now().isoformat(),
-            'data': items
+            'data': data_list
         }
         
-        save_file(file, cache_data)
-    elif isinstance(all_items, str):
-        items = request_mmo(f"items/{all_items}")
-        if isinstance(items, dict):
-            items = items["data"]
-        else: items = None
-    return items
+        save_file(cache_file, cache_data)
+        return data_list
+        
+    elif isinstance(all_data, str):
+        result = request_mmo(f"{data_type}/{all_data}")
+        if isinstance(result, dict) and "data" in result:
+            return result["data"]
+        return None
+    
+    return None
 
 def find_workshop(craftable):
     results = []
