@@ -49,7 +49,6 @@ def print_mmo(data):
 
 
 def find_resource(resource_code):
-    maps = load_file("maps.json")
     items = load_file("items.json")
     resources = load_file("resources.json")
 
@@ -75,18 +74,20 @@ def find_resource(resource_code):
                     target_resource_codes.append(resource["Код"])
                     break
 
+    return find_map_object(target_resource_codes)
+
+def find_map_object(resource_code):
+    maps = load_file("maps.json")
     coordinates = []
     for map_obj in maps:
         content = map_obj.get("Контент", {})
         if content:
-            if (content.get("Тип") == "resource" and 
-                content.get("Код") in target_resource_codes):
+            if content.get("Код") in resource_code:
                 coordinates.append({"x": map_obj["x"], "y": map_obj["y"]})
     
     if len(coordinates) == 1:
         coordinates = coordinates[0]
     return coordinates
-
 
 
 def nearest_object(object_coordinates, character_coordinates):
