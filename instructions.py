@@ -27,8 +27,9 @@ def crafting(character="all", resource=None, quantity=1):
             if item.get("Код") == resource:
                 craftable = item["craft"]["skill"]
                 coordinates = find_workshop(craftable)
-        cooldown = request_mmo(f"/my/{name}/action/move", coordinates, cooldown=True)
-        thread = threading.Thread(target=craft, args=(name, resource, cooldown, quantity))
+        cooldown = character_cooldown(character["Окончание кулдауна"])
+        request_mmo(f"/my/{name}/action/move", coordinates, cooldown)
+        thread = threading.Thread(target=craft, args=(character, resource, quantity))
         thread.start()
 
 def fighting(character="all", mob="chicken", fights=1):
@@ -58,6 +59,3 @@ def equip_item(character="all", item="", quantity=1):
     for character in characters:
         name = character["Имя"]
         request_mmo(f"/my/{name}/action/equip", body)
-
-# mining_resource(character="katya", resource="copper_ore", quantity=1)
-crafting("Falbue", "copper_bar", 2)
