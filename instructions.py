@@ -14,7 +14,7 @@ def mining_resource(character="all", resource=None, quantity=1):
         cooldown = character_cooldown(character["Окончание кулдауна"])
         request_mmo(f"/my/{name}/action/move", coordinates, cooldown)
         character = load_characters(name)[0]
-        thread = threading.Thread(target=gathering, args=(character, quantity))
+        thread = threading.Thread(target=gathering, args=(character, quantity, resource))
         thread.start()
 
 
@@ -47,4 +47,4 @@ def equip_item(character="all", item="", quantity=1):
         name = character["Имя"]
         request_mmo(f"/my/{name}/action/equip", body)
 
-mining_resource(character=1, resource="copper_ore", quantity=1)
+mining_resource(character=1, resource="ruby_stone", quantity=1)

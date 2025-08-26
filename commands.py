@@ -69,13 +69,29 @@ def load_characters(character):
         logger.error("Персонаж не выбран. Измените параметры")
     return names
 
-def gathering(character, quantity):
+def gathering(character, quantity, resource):
     cooldown = character_cooldown(character["Окончание кулдауна"])
-    logger.debug(f"{character['Имя']} приступил к добыванию ресурса")
+    logger.debug(f"{character['Имя']} приступил к добыванию ресурса {resource}")
     time.sleep(cooldown)
-    for i in range(quantity):
-        cooldown = request_mmo(f"/my/{character['Имя']}/action/gathering", True, True)
+
+    gathered_count = 0
+    while gathered_count < quantity:
+        data = request_mmo(f"/my/{character['Имя']}/action/gathering", True)
+        cooldown = data["data"]["Кулдаун"]["Всего секунд"]
+        items = data["data"]["details"]["items"]
+
+        found_target_resource = False
+        for item_data in items:
+            if item_data["Код"] == resource:
+                found_target_resource = True
+                gathered_count += 1
+                logger.debug(f'Успешно добыт {resource}')
+            else:
+                logger.debug(f'Добыт {item_data["Код"]} вместо {resource}')
+        
         time.sleep(cooldown)
+    
+    logger.info(f"{character['Имя']} добыл {gathered_count} {resource}")
 
 def fight(name, cooldown, quantity):
     logger.debug(f"{name} начал бой")
