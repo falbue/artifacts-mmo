@@ -71,7 +71,10 @@ def request_mmo(command="", body=None, cooldown=None):
             error = errors.get(f"{response.status_code}")
             if error is None:
                 error = f"Неизвестная ошибка: {response.status_code}"
-        logger.error(f"{error_int} {error} {command} {body}")
+        if error_int  in [490, 499]:
+            logger.warning(f"{error_int} {error} {command} {body}")
+        else:
+            logger.error(f"{error_int} {error} {command} {body}")
         data = error_int
     if cooldown == True:
         if error_int == 490:
@@ -80,4 +83,6 @@ def request_mmo(command="", body=None, cooldown=None):
             return 60
         if isinstance(data, dict):
             return int(data["data"]["Кулдаун"]["remaining_seconds"])
+        else:
+            return 0
     return data
