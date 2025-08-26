@@ -42,26 +42,11 @@ def print_mmo(data):
     else:
         print( str(data))
 
-def find_objects(data, target_code):
-    results = []
-    
-    for item in data:
-        if (item.get("Контент") and 
-            isinstance(item["Контент"], dict) and 
-            item["Контент"].get("Код") == target_code):
-            
-            x = item.get("x")
-            y = item.get("y")
-            
-            if x is not None and y is not None:
-                results.append({"x": x, "y": y})
-    
-    if not results:
-        return None
-    elif len(results) == 1:
-        return results[0]
-    else:
-        return results
+
+
+def find_resource(resource_code):
+    maps = load_file("maps.json")
+    items = load_file("items.json")
 
 def nearest_object(object_coordinates, character_coordinates):
     if not object_coordinates:
