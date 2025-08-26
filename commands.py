@@ -32,13 +32,11 @@ def scan_data(data_type="maps", all_data=True):
         
     elif isinstance(all_data, str):
         result = request_mmo(f"{data_type}/{all_data}")
-        if isinstance(result, dict) and "data" in result:
+        if result:
             return result["data"]
         return None
     
     return None
-
-scan_data("maps")
 
 def find_workshop(craftable):
     results = []

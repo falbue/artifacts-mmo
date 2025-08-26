@@ -44,7 +44,7 @@ def fighting(character="all", mob="chicken", fights=1):
         thread.start()
 
 def equip_item(character="all", item="", quantity=1):
-    slot = scan_items(item)
+    slot = scan_data("items", item)
     if slot:
         slot = slot["Тип"]
         body = {
