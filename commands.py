@@ -58,8 +58,13 @@ def load_characters(character):
     if character == "all":
         for i in range(len(characters["data"])):
             names.append(characters["data"][i])
-    elif character <= len(characters["data"]):
+    elif isinstance(character, int) and character <= len(characters["data"]):
         names.append(characters["data"][character-1])
+    elif isinstance(character, str):
+        x = find_character(characters, character)
+        if names is None:
+            logger.error("Персонаж не выбран. Измените параметры")
+        names.append(x)
     else:
         logger.error("Персонаж не выбран. Измените параметры")
     return names
