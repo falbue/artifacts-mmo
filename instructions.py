@@ -31,6 +31,18 @@ def crafting(character="all", resource=None, quantity=1):
         thread = threading.Thread(target=craft, args=(name, resource, cooldown, quantity))
         thread.start()
 
+def fighting(character="all", mob="chicken", fights=1):
+    characters = load_characters(character)
+    for character in characters:
+        name = character["Имя"]
+        coordinates = find_map_object(mob)
+        if len(coordinates) > 1 and isinstance(coordinates, list):
+            coordinates = nearest_object(coordinates, {"x":character["x"],"y":character["y"]})
+        cooldown = request_mmo(f"/my/{name}/action/move", coordinates, cooldown=True)
+        logger.debug(f"{character['Имя']} начинает бой с {mob}")
+        thread = threading.Thread(target=fight, args=(character, cooldown, fights))
+        thread.start()
+
 def equip_item(character="all", item="", quantity=1):
     slot = scan_items(item)
     if slot:
