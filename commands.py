@@ -121,7 +121,8 @@ def fight(character, cooldown, quantity):
         restore_health(data["data"]["character"])
 
 def craft(name, resource, cooldown, quantity):
+    logger.debug(f"{name} начнет крафт через {cooldown} сек")
     time.sleep(int(cooldown))
-    logger.debug(f"{name} начал крафт")
+    logger.debug(f"{name} начал крафт {resource}")
     cooldown = request_mmo(f"/my/{name}/action/crafting", {"code":resource, "quantity":quantity}, True)
     time.sleep(cooldown)
