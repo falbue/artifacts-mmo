@@ -2,6 +2,7 @@ import requests
 import json
 import os
 import re
+import time
 
 import os
 from dotenv import load_dotenv
@@ -46,7 +47,10 @@ def process_command(command_body, body):
     return body_dict
     
 
-def request_mmo(command="", body=None, cooldown=False):
+def request_mmo(command="", body=None, cooldown=None):
+    if (type(cooldown) in (int, float)) and cooldown > 0:
+        logger.debug(f"Ожидание завершения кулдауна. Осталось: {cooldown} сек")
+        time.sleep(cooldown)
     if command.startswith('/'):
         command = command[1:]
     if body:
@@ -58,21 +62,22 @@ def request_mmo(command="", body=None, cooldown=False):
         response = requests.get(f"https://api.artifactsmmo.com/{command}", headers={"Authorization": f"Bearer {TOKEN}"})
 
     data = response.json()
+    data = translate_data(data)
+    error = 0
     if data.get('error'):
         with open(error_path, 'r', encoding='utf-8') as file:
             errors = json.load(file)
-            data = errors.get(f"{response.status_code}")
-            if data is None:
-                data = response.json()
-        data = translate_data(data)
-        logger.error(f"{response.status_code} {data} {command} {body}")
-        data = int(response.status_code)
-    data = translate_data(data)
-    if cooldown:
-        if data == 490:
+            error_int = response.status_code
+            error = errors.get(f"{response.status_code}")
+            if error is None:
+                error = f"Неизвестная ошибка: {response.status_code}"
+        logger.error(f"{error_int} {error} {command} {body}")
+        data = error_int
+    if cooldown == True:
+        if error == 490:
             return 0
-        if data == 499:
+        if error == 499:
             return 60
-        else:
-            return 0
+        if isinstance(data, dict):
+            return int(data["data"]["Кулдаун"]["remaining_seconds"])
     return data
