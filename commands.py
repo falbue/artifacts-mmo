@@ -4,15 +4,13 @@ from utils import *
 def scan_data(data_type="maps", all_data=True):
     if all_data is True:
         cache_file = f"{data_type}.json"
-        cache_data = load_file(cache_file)
+        cache_data = load_file(cache_file, True)
         
         if cache_data is not None:
-            if isinstance(cache_data, dict) and 'timestamp' in cache_data and 'data' in cache_data:
-                cache_time = datetime.fromisoformat(cache_data['timestamp'])
-                
-                if datetime.now() - cache_time < timedelta(hours=1):
-                    logger.debug("Данные из кеша")
-                    return cache_data['data']
+            cache_time = datetime.fromisoformat(cache_data['timestamp'])
+            if datetime.now() - cache_time < timedelta(hours=1):
+                logger.debug("Данные из кеша")
+                return cache_data['data']
         
         logger.debug(f"Cканирование {data_type}...")
         data_list = []
@@ -39,6 +37,8 @@ def scan_data(data_type="maps", all_data=True):
         return None
     
     return None
+
+scan_data("maps")
 
 def find_workshop(craftable):
     results = []
