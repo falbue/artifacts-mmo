@@ -69,6 +69,19 @@ def load_characters(character):
         logger.error("Персонаж не выбран. Измените параметры")
     return names
 
+def restore_health(character, min_health=30):
+    if isinstance(character, list):
+        character = character[0]
+    
+    health = character['Здоровье']
+    max_health = character['Максимальное здоровье']
+    threshold = max_health * min_health / 100
+
+    if health < threshold:
+        cooldown = request_mmo(f"/my/{character['Имя']}/action/rest", True, True)
+        logger.info(f"{character['Имя']} восстановил здоровье")
+        time.sleep(cooldown)
+
 def gathering(character, quantity, resource):
     cooldown = character_cooldown(character["Окончание кулдауна"])
     logger.debug(f"{character['Имя']} приступил к добыванию ресурса {resource}")
