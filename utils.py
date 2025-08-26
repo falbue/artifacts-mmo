@@ -81,3 +81,27 @@ def nearest_object(object_coordinates, character_coordinates):
             nearest_obj = obj
     
     return nearest_obj
+
+
+def character_cooldown(server_time_str):
+    try:
+        server_time = datetime.fromisoformat(server_time_str.replace('Z', '+00:00'))
+        current_time = datetime.now(timezone.utc)
+
+        time_difference = (server_time - current_time).total_seconds()
+        
+        if time_difference > 0:
+            return int(time_difference)
+        else:
+            return 0
+            
+    except (ValueError, TypeError) as e:
+        logger.error(f"Ошибка при обработке времени: {e}")
+        return 0
+
+
+def find_character(data, character_name):
+    for character in data['data']:
+        if character['Имя'] == character_name:
+            return character
+    return None
