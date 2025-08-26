@@ -63,7 +63,7 @@ def request_mmo(command="", body=None, cooldown=None):
 
     data = response.json()
     data = translate_data(data)
-    error = 0
+    error_int = 0
     if data.get('error'):
         with open(error_path, 'r', encoding='utf-8') as file:
             errors = json.load(file)
@@ -74,9 +74,9 @@ def request_mmo(command="", body=None, cooldown=None):
         logger.error(f"{error_int} {error} {command} {body}")
         data = error_int
     if cooldown == True:
-        if error == 490:
+        if error_int == 490:
             return 0
-        if error == 499:
+        if error_int == 499:
             return 60
         if isinstance(data, dict):
             return int(data["data"]["Кулдаун"]["remaining_seconds"])
