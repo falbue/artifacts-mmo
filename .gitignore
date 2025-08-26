@@ -1,4 +1,3 @@
 __pycache__/
-game.py
-config.py
-artifactsmmo.egg-info/
+.*
+data/
