@@ -1,4 +1,4 @@
-from mmo_request import mmo_request
+from request_mmo import request_mmo
 from utils import *
 
 def scan_maps():
@@ -14,12 +14,12 @@ def scan_maps():
     
     logger.debug("Cканирование карт...")
     maps = []
-    data = mmo_request("/maps?size=100")
+    data = request_mmo("/maps?size=100")
     pages = data["pages"]
     
     for i in range(pages):
         command = f"/maps?size=100&page={i+1}"
-        data = mmo_request(command)
+        data = request_mmo(command)
         maps.extend(data["data"])
     
     cache_data = {
@@ -44,12 +44,12 @@ def scan_items(all_items=True):
         
         logger.debug("Cканирование ресурсов...")
         items = []
-        data = mmo_request("/items?size=100")
+        data = request_mmo("/items?size=100")
         pages = data["pages"]
         
         for i in range(pages):
             command = f"/items?size=100&page={i+1}"
-            data = mmo_request(command)
+            data = request_mmo(command)
             items.extend(data["data"])
         
         cache_data = {
@@ -59,7 +59,7 @@ def scan_items(all_items=True):
         
         save_file(file, cache_data)
     elif isinstance(all_items, str):
-        items = mmo_request(f"items/{all_items}")
+        items = request_mmo(f"items/{all_items}")
         if isinstance(items, dict):
             items = items["data"]
         else: items = None
@@ -78,7 +78,7 @@ def find_workshop(craftable):
     return results[0]
 
 def load_characters(character):
-    characters = mmo_request("/my/characters")
+    characters = request_mmo("/my/characters")
     names = []
     if character == "all":
         for i in range(len(characters["data"])):
@@ -95,18 +95,18 @@ def gathering(name, cooldown, quantity):
     logger.debug(f"{name} приступил к добыванию ресурса")
     time.sleep(int(cooldown))
     for i in range(quantity):
-        cooldown = mmo_request(f"/my/{name}/action/gathering", True, True)
+        cooldown = request_mmo(f"/my/{name}/action/gathering", True, True)
         time.sleep(cooldown)
 
 def fight(name, cooldown, quantity):
     logger.debug(f"{name} начал бой")
     time.sleep(int(cooldown))
     for i in range(quantity):
-        cooldown = mmo_request(f"/my/{name}/action/fight", True, True)
+        cooldown = request_mmo(f"/my/{name}/action/fight", True, True)
         time.sleep(cooldown)
 
 def craft(name, resource, cooldown, quantity):
     logger.debug(f"{name} начал крафт")
     time.sleep(int(cooldown))
-    cooldown = mmo_request(f"/my/{name}/action/crafting", {"code":resource, "quantity":quantity}, True)
+    cooldown = request_mmo(f"/my/{name}/action/crafting", {"code":resource, "quantity":quantity}, True)
     time.sleep(cooldown)

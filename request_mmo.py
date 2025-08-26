@@ -46,7 +46,7 @@ def process_command(command_body, body):
     return body_dict
     
 
-def mmo_request(command="", body=None, cooldown=False):
+def request_mmo(command="", body=None, cooldown=False):
     if command.startswith('/'):
         command = command[1:]
     if body:
@@ -69,10 +69,10 @@ def mmo_request(command="", body=None, cooldown=False):
         data = int(response.status_code)
     data = translate_data(data)
     if cooldown:
-            if data == 490:
-                return 0
-            if data == 499:
-                return 60
-            else:
-                return 0
+        if data == 490:
+            return 0
+        if data == 499:
+            return 60
+        else:
+            return 0
     return data
