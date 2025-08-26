@@ -20,9 +20,9 @@ def mining_resource(character="all", resource=None, quantity=1):
 
 def crafting(character="all", resource=None, quantity=1):
     characters = load_characters(character)
+    items = scan_data("items")
     for character in characters:
         name = character["Имя"]
-        items = scan_data("items")
         for item in items:
             if item.get("Код") == resource:
                 craftable = item["craft"]["skill"]
