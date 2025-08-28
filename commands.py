@@ -112,7 +112,7 @@ def fight(character, cooldown, quantity):
     for i in range(quantity):
         data = request_mmo(f"/my/{character['Имя']}/action/fight", True)
         if data == 598:
-            logger.info(f"{character["Имя"]} умер!")
+            logger.info(f"{character['Имя']} умер!")
             return
         cooldown = data["data"]["Кулдаун"]["Всего секунд"]
         time.sleep(cooldown)
