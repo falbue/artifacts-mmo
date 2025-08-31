@@ -26,7 +26,7 @@ def extraction(character, resource, quantity=1):
 
     gathered_count = 0
     while gathered_count < quantity:
-        if skill == 'mining':
+        if skill in ['mining', "fishing"]:
             data = gathering(character)
             items = data["data"]["details"]["items"]
         elif skill == "mob":
@@ -44,7 +44,7 @@ def extraction(character, resource, quantity=1):
     logger.info(f"{character['Имя']} добыл {gathered_count} {resource}")
     return
 
-def crafting(character="all", resource=None, quantity=1):
+def crafting(character, resource=None, quantity=1):
     items = scan_data("items")
     name = character["Имя"]
     for item in items:
@@ -52,14 +52,20 @@ def crafting(character="all", resource=None, quantity=1):
             craftable = item["craft"]["skill"]
             coordinates = find_workshop(craftable)
     request_mmo(f"/my/{name}/action/move", coordinates)
-    thread = threading.Thread(target=craft, args=(character, resource, quantity))
-    thread.start()
+    craft(character, resource, quantity)
 
-
-def equip_item(character="all", item="", quantity=1):
+def equip_item(character, item="", quantity=1):
     slot = scan_data("items", item)
     if slot:
         slot = slot["Тип"]
+        if slot == "ring":
+            if character["Кольцо 1"] == "":
+                slot = 'ring1'
+            elif character["Кольцо 2"] == "":
+                slot = 'ring2'
+            else:
+                logger.warning("Слот для колец занят")
+                return
         body = {
         "code": item,
         "slot": slot,
@@ -67,13 +73,14 @@ def equip_item(character="all", item="", quantity=1):
         }
     else:return
 
-    characters = load_characters(character)
-    for character in characters:
-        name = character["Имя"]
-        request_mmo(f"/my/{name}/action/equip", body)
+    name = character["Имя"]
+    request_mmo(f"/my/{name}/action/equip", body)
 
 def deposit_bank(character, item="all", quantity="all", take_items="deposit"):
     items = scan_data("items")
+
+    if take_items != "deposit":
+        take_items = "withdraw"
 
     if take_items == "withdraw":
         bank_inventory = request_mmo("/my/bank/items")["data"]
@@ -82,11 +89,11 @@ def deposit_bank(character, item="all", quantity="all", take_items="deposit"):
             return
         if quantity == "all":
             quantity = bank_item_quantity 
+    package = []
 
     coordinates = find_workshop("bank")
     name = character["Имя"]
     request_mmo(f"/my/{name}/action/move", coordinates)
-    package = []
     inventory = character["Инвентарь"]
     if item == "all":
         if take_items == "deposit":
@@ -94,8 +101,8 @@ def deposit_bank(character, item="all", quantity="all", take_items="deposit"):
                 code = inventory_item["Код"] 
                 quantity = inventory_item["Количество"]
                 if quantity > 0:
-                    deposit.append({"code": code, "quantity": quantity})
-        elif take_items == "withdraw ":
+                    package.append({"code": code, "quantity": quantity})
+        else:
             logger.warning(f"{name} не сможет забрать всё из банка")
             return
         request_mmo(f"/my/{name}/action/bank/{take_items}/item", package)
@@ -106,12 +113,13 @@ def deposit_bank(character, item="all", quantity="all", take_items="deposit"):
                 return
             if  quantity == "all":
                 quantity = item_quantity
-        request_mmo(f"/my/{name}/action/bank/{take_items}/item", [{"code": item, "quantity":quantity}])
+        package = [{"code": item, "quantity":quantity}]
+        request_mmo(f"/my/{name}/action/bank/{take_items}/item", package)
 
-    if take_items == "withdraw":
-        logger.debug(f"{name} взял из банка {items}")
+    if take_items == "deposit":
+        logger.debug(f"{name} положил в банк {item}")
     else:
-        logger.debug(f"{name} положил в банк {items}")
+        logger.debug(f"{name} взял из банка {item}")
 
 def fighting(character, mob="chicken", fights=1):
     name = character["Имя"]
