@@ -3,46 +3,58 @@ from utils import *
 from commands import *
 
 
+def character_action(func, character, *args, **kwargs):
+    characters = load_characters(character)
+    threads = []
+    for character in characters:
+        thread = threading.Thread(
+            target=func, 
+            args=(character, *args), 
+            kwargs=kwargs
+        )
+        thread.start()
+        threads.append(thread)
+    
+    return threads
+
+
 def extraction(character, resource, quantity=1):
     skill, coordinates = find_resource(resource)
-    characters = load_characters(character)
-    for character in characters:
-        name = character["Имя"]
-        request_mmo(f"/my/{name}/action/move", coordinates)
-        logger.debug(f"{character['Имя']} приступил к добыванию ресурса {resource}")
-    
-        gathered_count = 0
-        while gathered_count < quantity:
-            if skill == 'mining':
-                data = gathering(character)
-                items = data["data"]["details"]["items"]
-            elif skill == "mob":
-                data = fight(character)
-                items = data['data']["fight"]["drops"]
+    name = character["Имя"]
+    request_mmo(f"/my/{name}/action/move", coordinates)
+    logger.debug(f"{character['Имя']} приступил к добыванию ресурса {resource}")
 
-            found_target_resource = False
-            for item_data in items:
-                if item_data["Код"] == resource:
-                    found_target_resource = True
-                    gathered_count += 1
-                    logger.debug(f'Успешно добыт {resource}')
-                else:
-                    logger.debug(f'Добыт {item_data["Код"]} вместо {resource}')
-        logger.info(f"{character['Имя']} добыл {gathered_count} {resource}")
-        return
+    gathered_count = 0
+    while gathered_count < quantity:
+        if skill == 'mining':
+            data = gathering(character)
+            items = data["data"]["details"]["items"]
+        elif skill == "mob":
+            data = fight(character)
+            items = data['data']["fight"]["drops"]
+
+        found_target_resource = False
+        for item_data in items:
+            if item_data["Код"] == resource:
+                found_target_resource = True
+                gathered_count += 1
+                logger.debug(f'Успешно добыт {resource}')
+            else:
+                logger.debug(f'Добыт {item_data["Код"]} вместо {resource}')
+    logger.info(f"{character['Имя']} добыл {gathered_count} {resource}")
+    return
 
 def crafting(character="all", resource=None, quantity=1):
-    characters = load_characters(character)
     items = scan_data("items")
-    for character in characters:
-        name = character["Имя"]
-        for item in items:
-            if item.get("Код") == resource:
-                craftable = item["craft"]["skill"]
-                coordinates = find_workshop(craftable)
-        request_mmo(f"/my/{name}/action/move", coordinates)
-        thread = threading.Thread(target=craft, args=(character, resource, quantity))
-        thread.start()
+    name = character["Имя"]
+    for item in items:
+        if item.get("Код") == resource:
+            craftable = item["craft"]["skill"]
+            coordinates = find_workshop(craftable)
+    request_mmo(f"/my/{name}/action/move", coordinates)
+    thread = threading.Thread(target=craft, args=(character, resource, quantity))
+    thread.start()
+
 
 def equip_item(character="all", item="", quantity=1):
     slot = scan_data("items", item)
@@ -92,6 +104,15 @@ def deposit_bank(character, item="all", quantity="all", take_items="deposit"):
                     return
                 if  quantity == "all":
                     quantity = item_quantity
-            request_mmo(f"/my/{name}/action/bank/{take_items}/item", [{"code": item, "quantity":quantity}]) 
+            request_mmo(f"/my/{name}/action/bank/{take_items}/item", [{"code": item, "quantity":quantity}])
 
-# extraction("Falbue", "egg", 2)
+def fighting(character, mob="chicken", fights=1):
+    name = character["Имя"]
+    coordinates = find_map_object(mob)
+    if len(coordinates) > 1 and isinstance(coordinates, list):
+        coordinates = nearest_object(coordinates, {"x":character["x"],"y":character["y"]})
+    request_mmo(f"/my/{name}/action/move", coordinates)
+    logger.debug(f"{character['Имя']} начинает бой с {mob}")
+    fight(character, fights)
+
+character_action(fighting, character="Falbue", mob="yellow_slime", fights=100)
