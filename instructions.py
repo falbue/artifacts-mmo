@@ -134,8 +134,7 @@ def deposit_bank(character, item="all", quantity="all", take_items="deposit"):
                     package.append({"code": code, "quantity": quantity})
         else:
             logger.warning(f"{name} не сможет забрать всё из банка")
-            return
-        request_mmo(f"/my/{name}/action/bank/{take_items}/item", package)
+            return 
     else:
         if take_items == "deposit":
             item_quantity = find_item_inventory(item, inventory)
@@ -144,12 +143,17 @@ def deposit_bank(character, item="all", quantity="all", take_items="deposit"):
             if  quantity == "all":
                 quantity = item_quantity
         package = [{"code": item, "quantity":quantity}]
-        request_mmo(f"/my/{name}/action/bank/{take_items}/item", package)
+
+    if not package:
+        logger.warning(f"Инвентарь {name} пуст")
+        return
 
     if take_items == "deposit":
         logger.debug(f"{name} положил в банк {item}")
     else:
         logger.debug(f"{name} взял из банка {item}")
+
+    request_mmo(f"/my/{name}/action/bank/{take_items}/item", package)
 
 def fighting(character, mob="chicken", fights=1):
     name = character["Имя"]
