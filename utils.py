@@ -50,7 +50,6 @@ def print_mmo(data):
 
 def find_resource(resource_code):
     items = load_file("items.json")
-    resources = load_file("resources.json")
 
     target_item = None
     for item in items:
@@ -65,16 +64,25 @@ def find_resource(resource_code):
         return None
 
     skill_type = target_item["Подтип"]
-
     target_resource_codes = []
-    for resource in resources:
-        if resource["skill"] == skill_type:
+
+    if skill_type == "mob":
+        monsters = load_file("monsters.json")
+        for resource in monsters:
             for drop in resource["drops"]:
                 if drop["Код"] == resource_code:
                     target_resource_codes.append(resource["Код"])
-                    break
+                    break 
+    else:
+        resources = load_file("resources.json")
+        for resource in resources:
+            if resource["skill"] == skill_type:
+                for drop in resource["drops"]:
+                    if drop["Код"] == resource_code:
+                        target_resource_codes.append(resource["Код"])
+                        break
 
-    return find_map_object(target_resource_codes)
+    return skill_type, find_map_object(target_resource_codes)
 
 def find_map_object(resource_code):
     maps = load_file("maps.json")
@@ -110,7 +118,7 @@ def nearest_object(object_coordinates, character_coordinates):
     return nearest_obj
 
 
-def character_cooldown(server_time_str):
+def check_cooldown(server_time_str):
     try:
         server_time = datetime.fromisoformat(server_time_str.replace('Z', '+00:00'))
         current_time = datetime.now(timezone.utc)

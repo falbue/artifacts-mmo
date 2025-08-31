@@ -1,7 +1,11 @@
 from request_mmo import request_mmo
 from utils import *
 
-def scan_data(data_type="maps", all_data=True):
+def scan_data(data_type="all", all_data=True):
+    if data_type == "all":
+        for scan in ["maps", "items", "resources", "monsters"]:
+            scan_data(scan)
+        return
     if all_data is True:
         cache_file = f"{data_type}.json"
         cache_data = load_file(cache_file, True)
@@ -9,7 +13,7 @@ def scan_data(data_type="maps", all_data=True):
         if cache_data is not None:
             cache_time = datetime.fromisoformat(cache_data['timestamp'])
             if datetime.now() - cache_time < timedelta(hours=1):
-                logger.debug("Данные из кеша")
+                logger.debug(f"Данные {data_type} из кеша")
                 return cache_data['data']
         
         logger.debug(f"Cканирование {data_type}...")
@@ -67,6 +71,34 @@ def load_characters(character):
         logger.error("Персонаж не выбран. Измените параметры")
     return names
 
+def extraction(character, resource, quantity=1):
+    skill, coordinates = find_resource(resource)
+    characters = load_characters(character)
+    for character in characters:
+        name = character["Имя"]
+        request_mmo(f"/my/{name}/action/move", coordinates)
+        logger.debug(f"{character['Имя']} приступил к добыванию ресурса {resource}")
+    
+        gathered_count = 0
+        while gathered_count < quantity:
+            if skill == 'mining':
+                data = gathering(character)
+                items = data["data"]["details"]["items"]
+            elif skill == "mob":
+                data = fight(character)
+                items = data['data']["fight"]["drops"]
+
+            found_target_resource = False
+            for item_data in items:
+                if item_data["Код"] == resource:
+                    found_target_resource = True
+                    gathered_count += 1
+                    logger.debug(f'Успешно добыт {resource}')
+                else:
+                    logger.debug(f'Добыт {item_data["Код"]} вместо {resource}')
+        logger.info(f"{character['Имя']} добыл {gathered_count} {resource}")
+        return
+
 def restore_health(character, min_health=30):
     if isinstance(character, list):
         character = character[0]
@@ -76,53 +108,24 @@ def restore_health(character, min_health=30):
     threshold = max_health * min_health / 100
 
     if health < threshold:
-        cooldown = request_mmo(f"/my/{character['Имя']}/action/rest", True, True)
+        request_mmo(f"/my/{character['Имя']}/action/rest", True)
         logger.info(f"{character['Имя']} восстановил здоровье")
-        time.sleep(cooldown)
 
-def gathering(character, quantity, resource):
-    cooldown = character_cooldown(character["Окончание кулдауна"])
-    logger.debug(f"{character['Имя']} приступил к добыванию ресурса {resource}")
-    time.sleep(cooldown)
+def gathering(character):
+    data = request_mmo(f"/my/{character['Имя']}/action/gathering", True)
+    return data
 
-    gathered_count = 0
-    while gathered_count < quantity:
-        data = request_mmo(f"/my/{character['Имя']}/action/gathering", True)
-        cooldown = data["data"]["Кулдаун"]["Всего секунд"]
-        items = data["data"]["details"]["items"]
 
-        found_target_resource = False
-        for item_data in items:
-            if item_data["Код"] == resource:
-                found_target_resource = True
-                gathered_count += 1
-                logger.debug(f'Успешно добыт {resource}')
-            else:
-                logger.debug(f'Добыт {item_data["Код"]} вместо {resource}')
-        
-        time.sleep(cooldown)
-    
-    logger.info(f"{character['Имя']} добыл {gathered_count} {resource}")
-
-def fight(character, cooldown, quantity):
-    if cooldown > 0:
-        logger.debug(f"{character['Имя']} начнёт бой через {cooldown} сек")
-        time.sleep(int(cooldown))
+def fight(character):
     restore_health(character)
-    for i in range(quantity):
-        data = request_mmo(f"/my/{character['Имя']}/action/fight", True)
-        if data == 598:
-            logger.info(f"{character['Имя']} умер!")
-            return
-        cooldown = data["data"]["Кулдаун"]["Всего секунд"]
-        time.sleep(cooldown)
-        restore_health(data["data"]["character"])
+    data = request_mmo(f"/my/{character['Имя']}/action/fight", True)
+    if data == 598:
+        logger.info(f"{character['Имя']} умер!")
+    restore_health(data["data"]["character"])
+    return data
 
 def craft(character, resource, quantity):
     name = character['Имя']
-    cooldown = character_cooldown(character["Окончание кулдауна"])
     logger.debug(f"{name} начнет крафт через {cooldown} сек")
-    time.sleep(cooldown)
     logger.debug(f"{name} начал крафт {resource}")
-    cooldown = request_mmo(f"/my/{name}/action/crafting", {"code":resource, "quantity":quantity}, True)
-    time.sleep(cooldown)
+    request_mmo(f"/my/{name}/action/crafting", {"code":resource, "quantity":quantity})

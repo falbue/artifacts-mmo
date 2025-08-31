@@ -10,7 +10,9 @@ def mining_resource(character="all", resource=None, quantity=1):
         maps = scan_data("maps")
         maps = scan_data("items")
         maps = scan_data("resources")
+        maps = scan_data("monsters")
         coordinates = find_resource(resource)
+        print(coordinates)
         if len(coordinates) > 1 and isinstance(coordinates, list):
             coordinates = nearest_object(coordinates, {"x":character["x"],"y":character["y"]})
         cooldown = character_cooldown(character["Окончание кулдауна"])
@@ -62,4 +64,4 @@ def equip_item(character="all", item="", quantity=1):
         name = character["Имя"]
         request_mmo(f"/my/{name}/action/equip", body)
 
-mining_resource("all", "copper_ore", 20)
+extraction("Falbue", "egg", 2)
