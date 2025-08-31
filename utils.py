@@ -140,3 +140,14 @@ def find_character(data, character_name):
         if character['Имя'] == character_name:
             return character
     return None
+
+def find_item_inventory(item, inventory):
+    item_inventory_found = False
+    for inventory_item in inventory:
+        if inventory_item["Код"] == item:
+            item_inventory_found = True
+            break
+    if not item_inventory_found:
+        logger.warning(f"{item} не найден в инвентаре")
+        return None
+    return inventory_item["Количество"]

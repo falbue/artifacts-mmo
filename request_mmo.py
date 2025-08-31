@@ -55,7 +55,7 @@ def request_mmo(command="", body=None):
     base_command = command.split("/")
     if base_command[0] == "my":
         name = base_command[1]
-        if name != "characters":
+        if name not in ["characters", "bank"]:
             data = request_mmo(f"/characters/{name}")
             cooldown = check_cooldown(data["data"]["Окончание кулдауна"])
             if cooldown > 0:

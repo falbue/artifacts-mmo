@@ -3,24 +3,33 @@ from utils import *
 from commands import *
 
 
-def mining_resource(character="all", resource=None, quantity=1):
+def extraction(character, resource, quantity=1):
+    skill, coordinates = find_resource(resource)
     characters = load_characters(character)
     for character in characters:
         name = character["Имя"]
-        maps = scan_data("maps")
-        maps = scan_data("items")
-        maps = scan_data("resources")
-        maps = scan_data("monsters")
-        coordinates = find_resource(resource)
-        print(coordinates)
-        if len(coordinates) > 1 and isinstance(coordinates, list):
-            coordinates = nearest_object(coordinates, {"x":character["x"],"y":character["y"]})
-        cooldown = character_cooldown(character["Окончание кулдауна"])
-        request_mmo(f"/my/{name}/action/move", coordinates, cooldown)
-        character = load_characters(name)[0]
-        thread = threading.Thread(target=gathering, args=(character, quantity, resource))
-        thread.start()
+        request_mmo(f"/my/{name}/action/move", coordinates)
+        logger.debug(f"{character['Имя']} приступил к добыванию ресурса {resource}")
+    
+        gathered_count = 0
+        while gathered_count < quantity:
+            if skill == 'mining':
+                data = gathering(character)
+                items = data["data"]["details"]["items"]
+            elif skill == "mob":
+                data = fight(character)
+                items = data['data']["fight"]["drops"]
 
+            found_target_resource = False
+            for item_data in items:
+                if item_data["Код"] == resource:
+                    found_target_resource = True
+                    gathered_count += 1
+                    logger.debug(f'Успешно добыт {resource}')
+                else:
+                    logger.debug(f'Добыт {item_data["Код"]} вместо {resource}')
+        logger.info(f"{character['Имя']} добыл {gathered_count} {resource}")
+        return
 
 def crafting(character="all", resource=None, quantity=1):
     characters = load_characters(character)
@@ -31,21 +40,8 @@ def crafting(character="all", resource=None, quantity=1):
             if item.get("Код") == resource:
                 craftable = item["craft"]["skill"]
                 coordinates = find_workshop(craftable)
-        cooldown = character_cooldown(character["Окончание кулдауна"])
-        request_mmo(f"/my/{name}/action/move", coordinates, cooldown)
+        request_mmo(f"/my/{name}/action/move", coordinates)
         thread = threading.Thread(target=craft, args=(character, resource, quantity))
-        thread.start()
-
-def fighting(character="all", mob="chicken", fights=1):
-    characters = load_characters(character)
-    for character in characters:
-        name = character["Имя"]
-        coordinates = find_map_object(mob)
-        if len(coordinates) > 1 and isinstance(coordinates, list):
-            coordinates = nearest_object(coordinates, {"x":character["x"],"y":character["y"]})
-        cooldown = request_mmo(f"/my/{name}/action/move", coordinates, cooldown=True)
-        logger.debug(f"{character['Имя']} начинает бой с {mob}")
-        thread = threading.Thread(target=fight, args=(character, cooldown, fights))
         thread.start()
 
 def equip_item(character="all", item="", quantity=1):
@@ -64,4 +60,38 @@ def equip_item(character="all", item="", quantity=1):
         name = character["Имя"]
         request_mmo(f"/my/{name}/action/equip", body)
 
-extraction("Falbue", "egg", 2)
+def deposit_bank(character, item="all", quantity="all", take_items="deposit"):
+    characters = load_characters(character)
+    items = scan_data("items")
+
+    if take_items == "withdraw":
+        bank_inventory = request_mmo("/my/bank/items")["data"]
+        bank_item_quantity = find_item_inventory(item, bank_inventory)
+        if bank_item_quantity is None:
+            return
+
+    for character in characters:
+        package = []
+        name = character["Имя"]
+        inventory = character["Инвентарь"]
+        if item == "all":
+            if take_items == "deposit":
+                for inventory_item in inventory:
+                    code = inventory_item["Код"] 
+                    quantity = inventory_item["Количество"]
+                    if quantity > 0:
+                        deposit.append({"code": code, "quantity": quantity})
+            elif take_items == "withdraw ":
+                logger.warning(f"{name} не сможет забрать всё из банка")
+                return
+            request_mmo(f"/my/{name}/action/bank/{take_items}/item", package)
+        else:
+            if take_items == "deposit":
+                item_quantity = find_item_inventory(item, inventory)
+                if item_quantity is None:
+                    return
+                if  quantity == "all":
+                    quantity = item_quantity
+            request_mmo(f"/my/{name}/action/bank/{take_items}/item", [{"code": item, "quantity":quantity}]) 
+
+# extraction("Falbue", "egg", 2)
