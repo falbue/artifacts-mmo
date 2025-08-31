@@ -6,6 +6,7 @@ import time
 
 import os
 from dotenv import load_dotenv
+from utils import *
 import logger
 
 logger = logger.setup(True)
@@ -47,12 +48,20 @@ def process_command(command_body, body):
     return body_dict
     
 
-def request_mmo(command="", body=None, cooldown=None):
-    if (type(cooldown) in (int, float)) and cooldown > 0:
-        logger.debug(f"Ожидание завершения кулдауна. Осталось: {cooldown} сек")
-        time.sleep(cooldown)
+def request_mmo(command="", body=None):
     if command.startswith('/'):
         command = command[1:]
+
+    base_command = command.split("/")
+    if base_command[0] == "my":
+        name = base_command[1]
+        if name != "characters":
+            data = request_mmo(f"/characters/{name}")
+            cooldown = check_cooldown(data["data"]["Окончание кулдауна"])
+            if cooldown > 0:
+                logger.debug(f"{name} в кулдауне на {cooldown} сек.")
+                time.sleep(cooldown)
+
     if body:
         if body == True:
             response = requests.post(f"https://api.artifactsmmo.com/{command}", headers={"Authorization": f"Bearer {TOKEN}"})
@@ -74,15 +83,8 @@ def request_mmo(command="", body=None, cooldown=None):
         if error_int  in [490, 499]:
             logger.debug(f"{error} {command}")
         else:
-            logger.error(f"{error_int} {error} {command} {body}")
+            error_message = f"{error_int} {error} {command} {body}"
+            logger.error(error_message)
+            raise Exception(error_message)
         data = error_int
-    if cooldown == True:
-        if error_int == 490:
-            return 0
-        if error_int == 499:
-            return 60
-        if isinstance(data, dict):
-            return int(data["data"]["Кулдаун"]["remaining_seconds"])
-        else:
-            return 0
     return data
