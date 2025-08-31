@@ -71,34 +71,6 @@ def load_characters(character):
         logger.error("Персонаж не выбран. Измените параметры")
     return names
 
-def extraction(character, resource, quantity=1):
-    skill, coordinates = find_resource(resource)
-    characters = load_characters(character)
-    for character in characters:
-        name = character["Имя"]
-        request_mmo(f"/my/{name}/action/move", coordinates)
-        logger.debug(f"{character['Имя']} приступил к добыванию ресурса {resource}")
-    
-        gathered_count = 0
-        while gathered_count < quantity:
-            if skill == 'mining':
-                data = gathering(character)
-                items = data["data"]["details"]["items"]
-            elif skill == "mob":
-                data = fight(character)
-                items = data['data']["fight"]["drops"]
-
-            found_target_resource = False
-            for item_data in items:
-                if item_data["Код"] == resource:
-                    found_target_resource = True
-                    gathered_count += 1
-                    logger.debug(f'Успешно добыт {resource}')
-                else:
-                    logger.debug(f'Добыт {item_data["Код"]} вместо {resource}')
-        logger.info(f"{character['Имя']} добыл {gathered_count} {resource}")
-        return
-
 def restore_health(character, min_health=30):
     if isinstance(character, list):
         character = character[0]
@@ -126,6 +98,5 @@ def fight(character):
 
 def craft(character, resource, quantity):
     name = character['Имя']
-    logger.debug(f"{name} начнет крафт через {cooldown} сек")
     logger.debug(f"{name} начал крафт {resource}")
     request_mmo(f"/my/{name}/action/crafting", {"code":resource, "quantity":quantity})
