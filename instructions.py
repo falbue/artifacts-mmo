@@ -19,6 +19,8 @@ def character_action(func, character, *args, **kwargs):
 
 
 def extraction(character, resource, quantity=1):
+    if check_craftable(resource):
+        crafting(character, resource, quantity)
     skill, coordinates = find_resource(resource)
     name = character["Имя"]
     request_mmo(f"/my/{name}/action/move", coordinates)
@@ -44,15 +46,37 @@ def extraction(character, resource, quantity=1):
     logger.info(f"{character['Имя']} добыл {gathered_count} {resource}")
     return
 
-def crafting(character, resource=None, quantity=1):
+def crafting(character, crafting_item=None, quantity=1):
     items = scan_data("items")
     name = character["Имя"]
+
     for item in items:
-        if item.get("Код") == resource:
+        if item.get("Код") == crafting_item:
+            craft_items = item["craft"]["items"]
+            for craft_item in craft_items:
+                quantity_craft = craft_item["Количество"] * quantity
+                find_item = find_item_inventory(craft_item["Код"], character["Инвентарь"])
+                if find_item <= quantity_craft:
+                    bank_inventory = request_mmo("/my/bank/items")["data"]
+                    find_item_bank = find_item_inventory(craft_item["Код"], bank_inventory)
+                    if find_item_bank + find_item <= quantity_craft:
+                        give_bank = "all"
+                        logger.debug(f"{name} не хватило {quantity_craft - (find_item + find_item_bank)} {craft_item['Код']} для крафта {crafting_item}")
+                        extraction(character, craft_item["Код"], quantity_craft - (find_item + find_item_bank))
+                    elif find_item_bank >= quantity_craft:
+                        give_bank = quantity_craft
+
+                    if find_item_bank > 0: 
+                        deposit_bank(character, item=craft_item["Код"], quantity=give_bank, take_items=True)
+
+
+
             craftable = item["craft"]["skill"]
             coordinates = find_workshop(craftable)
-    request_mmo(f"/my/{name}/action/move", coordinates)
-    craft(character, resource, quantity)
+            request_mmo(f"/my/{name}/action/move", coordinates)
+            craft(character, crafting_item, quantity)
+            logger.info(f"{name} создал {item}")
+            return
 
 def equip_item(character, item="", quantity=1):
     slot = scan_data("items", item)

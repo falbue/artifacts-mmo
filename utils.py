@@ -149,5 +149,14 @@ def find_item_inventory(item, inventory):
             break
     if not item_inventory_found:
         logger.warning(f"{item} не найден в инвентаре")
-        return None
+        return 0
     return inventory_item["Количество"]
+
+def check_craftable(crafting_item):
+    items = load_file("items.json")
+    for item in items:
+        if item.get("Код") == crafting_item:
+            craftable = item.get("craft")
+            if craftable:
+                return True
+    return False
