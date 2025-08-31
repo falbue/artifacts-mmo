@@ -34,13 +34,12 @@ def scan_data(data_type="all", all_data=True):
         save_file(cache_file, cache_data)
         return data_list
         
-    elif isinstance(all_data, str):
+    elif isinstance(all_data, str) and all_data != "":
         result = request_mmo(f"{data_type}/{all_data}")
+        logger.debug(f"Получение данных о {all_data}")
         if result:
             return result["data"]
         return None
-    
-    return None
 
 def find_workshop(craftable):
     results = []
@@ -71,6 +70,50 @@ def load_characters(character):
         logger.error("Персонаж не выбран. Измените параметры")
     return names
 
+def check_tool(character, item_type):
+    items_data = scan_data("items")
+    items_dict = {item["Код"]: item for item in items_data if "Код" in item}
+    
+    def find_best_item(inventory_items):
+        best_item = None
+        
+        for inventory_item in inventory_items:
+            item_code = inventory_item.get("Код")
+            if not item_code:
+                continue
+
+            item_data = items_dict.get(item_code)
+            if not item_data:
+                continue
+            
+            if item_type == "mob":
+                if (item_data.get("Тип") == "weapon" and 
+                    item_data.get("Подтип") in ["", "sword", "axe", "mace", "dagger"]):
+                    level = item_data.get("Уровень", 0)
+                    if best_item is None or level > best_item["level"]:
+                        best_item = {"item": item_data, "level": level}
+            else:
+                for effect in item_data.get("effects", []):
+                    if effect.get("Код") == item_type:
+                        level = item_data.get("Уровень", 0)
+                        if best_item is None or level > best_item["level"]:
+                            best_item = {"item": item_data, "level": level}
+                        break
+        
+        return best_item
+    
+    best_inventory_item = find_best_item(character["Инвентарь"])
+    
+    bank_inventory = request_mmo("/my/bank/items")["data"]
+    best_bank_item = find_best_item(bank_inventory)
+    
+    if best_inventory_item:
+        return {"equip": "inventory", "tool": best_inventory_item["item"]["Код"]}
+    elif best_bank_item:
+        return {"equip": "bank", "tool": best_bank_item["item"]["Код"]}
+    
+    return None
+
 def restore_health(character, min_health=30):
     if isinstance(character, list):
         character = character[0]
@@ -94,7 +137,6 @@ def fight(character, fights=1):
         data = request_mmo(f"/my/{character['Имя']}/action/fight", True)
         if data == 598:
             logger.info(f"{character['Имя']} умер!")
-        restore_health(data["data"]["character"])
     return data
 
 def craft(character, resource, quantity):
