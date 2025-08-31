@@ -63,6 +63,7 @@ def request_mmo(command="", body=None):
                 time.sleep(cooldown)
 
             if base_command[2] == 'action' and base_command[3] == "move" and len(body) > 1 and isinstance(body, list):
+                character = data['data']
                 body = nearest_object(body, {"x":character["x"],"y":character["y"]})
 
 
