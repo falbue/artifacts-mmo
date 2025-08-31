@@ -62,6 +62,11 @@ def request_mmo(command="", body=None):
                 logger.debug(f"{name} в кулдауне на {cooldown} сек.")
                 time.sleep(cooldown)
 
+            if base_command[2] == 'action' and base_command[3] == "move" and len(body) > 1:
+                character = data["data"]
+                body = nearest_object(body, {"x":character["x"],"y":character["y"]})
+
+
     if body:
         if body == True:
             response = requests.post(f"https://api.artifactsmmo.com/{command}", headers={"Authorization": f"Bearer {TOKEN}"})

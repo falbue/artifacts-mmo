@@ -149,8 +149,6 @@ def deposit_bank(character, item="all", quantity="all", take_items="deposit"):
 def fighting(character, mob="chicken", fights=1):
     name = character["Имя"]
     coordinates = find_map_object(mob)
-    if len(coordinates) > 1 and isinstance(coordinates, list):
-        coordinates = nearest_object(coordinates, {"x":character["x"],"y":character["y"]})
     request_mmo(f"/my/{name}/action/move", coordinates)
     logger.debug(f"{character['Имя']} начинает бой с {mob}")
     fight(character, fights)
