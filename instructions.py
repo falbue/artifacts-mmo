@@ -24,17 +24,22 @@ def extraction(character, resource, quantity=1):
         return
     skill, coordinates = find_resource(resource)
     name = character["Имя"]
+    tool = check_tool(character, skill)
+    if tool:
+        if tool["equip"] == "bank":
+            deposit_bank(character, item=tool["tool"], quantity=1, take_items=True)
+        equip_item(character, item=tool["tool"])
     request_mmo(f"/my/{name}/action/move", coordinates)
     logger.debug(f"{character['Имя']} приступил к добыванию ресурса {resource}")
 
     gathered_count = 0
     while gathered_count < quantity:
-        if skill in ['mining', "fishing"]:
-            data = gathering(character)
-            items = data["data"]["details"]["items"]
-        elif skill == "mob":
+        if skill == "mob":
             data = fight(character)
             items = data['data']["fight"]["drops"]
+        else:
+            data = gathering(character)
+            items = data["data"]["details"]["items"]
 
         found_target_resource = False
         for item_data in items:
