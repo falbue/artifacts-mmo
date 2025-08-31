@@ -73,7 +73,6 @@ def equip_item(character="all", item="", quantity=1):
         request_mmo(f"/my/{name}/action/equip", body)
 
 def deposit_bank(character, item="all", quantity="all", take_items="deposit"):
-    characters = load_characters(character)
     items = scan_data("items")
 
     if take_items == "withdraw":
@@ -81,30 +80,38 @@ def deposit_bank(character, item="all", quantity="all", take_items="deposit"):
         bank_item_quantity = find_item_inventory(item, bank_inventory)
         if bank_item_quantity is None:
             return
+        if quantity == "all":
+            quantity = bank_item_quantity 
 
-    for character in characters:
-        package = []
-        name = character["Имя"]
-        inventory = character["Инвентарь"]
-        if item == "all":
-            if take_items == "deposit":
-                for inventory_item in inventory:
-                    code = inventory_item["Код"] 
-                    quantity = inventory_item["Количество"]
-                    if quantity > 0:
-                        deposit.append({"code": code, "quantity": quantity})
-            elif take_items == "withdraw ":
-                logger.warning(f"{name} не сможет забрать всё из банка")
+    coordinates = find_workshop("bank")
+    name = character["Имя"]
+    request_mmo(f"/my/{name}/action/move", coordinates)
+    package = []
+    inventory = character["Инвентарь"]
+    if item == "all":
+        if take_items == "deposit":
+            for inventory_item in inventory:
+                code = inventory_item["Код"] 
+                quantity = inventory_item["Количество"]
+                if quantity > 0:
+                    deposit.append({"code": code, "quantity": quantity})
+        elif take_items == "withdraw ":
+            logger.warning(f"{name} не сможет забрать всё из банка")
+            return
+        request_mmo(f"/my/{name}/action/bank/{take_items}/item", package)
+    else:
+        if take_items == "deposit":
+            item_quantity = find_item_inventory(item, inventory)
+            if item_quantity is None:
                 return
-            request_mmo(f"/my/{name}/action/bank/{take_items}/item", package)
-        else:
-            if take_items == "deposit":
-                item_quantity = find_item_inventory(item, inventory)
-                if item_quantity is None:
-                    return
-                if  quantity == "all":
-                    quantity = item_quantity
-            request_mmo(f"/my/{name}/action/bank/{take_items}/item", [{"code": item, "quantity":quantity}])
+            if  quantity == "all":
+                quantity = item_quantity
+        request_mmo(f"/my/{name}/action/bank/{take_items}/item", [{"code": item, "quantity":quantity}])
+
+    if take_items == "withdraw":
+        logger.debug(f"{name} взял из банка {items}")
+    else:
+        logger.debug(f"{name} положил в банк {items}")
 
 def fighting(character, mob="chicken", fights=1):
     name = character["Имя"]
@@ -114,5 +121,3 @@ def fighting(character, mob="chicken", fights=1):
     request_mmo(f"/my/{name}/action/move", coordinates)
     logger.debug(f"{character['Имя']} начинает бой с {mob}")
     fight(character, fights)
-
-character_action(fighting, character="Falbue", mob="yellow_slime", fights=100)
