@@ -61,7 +61,7 @@ def crafting(character, crafting_item=None, quantity=1):
             craft_items = item["craft"]["items"]
             for craft_item in craft_items:
                 quantity_craft = craft_item["quantity"] * quantity
-                find_item = find_item_inventory(craft_item["code"], character["Инвентарь"])
+                find_item = find_item_inventory(craft_item["code"], character["inventory"])
                 if find_item <= quantity_craft:
                     bank_inventory = request_mmo("/my/bank/items")["data"]
                     find_item_bank = find_item_inventory(craft_item["code"], bank_inventory)
@@ -124,7 +124,7 @@ def deposit_bank(character, item="all", quantity="all", take_items="deposit"):
     coordinates = find_workshop("bank")
     name = character["name"]
     request_mmo(f"/my/{name}/action/move", coordinates)
-    inventory = character["Инвентарь"]
+    inventory = character["inventory"]
     if item == "all":
         if take_items == "deposit":
             for inventory_item in inventory:
@@ -145,7 +145,7 @@ def deposit_bank(character, item="all", quantity="all", take_items="deposit"):
         package = [{"code": item, "quantity":quantity}]
 
     if not package:
-        logger.warning(f"Инвентарь {name} пуст")
+        logger.warning(f"inventory {name} пуст")
         return
 
     if take_items == "deposit":

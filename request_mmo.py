@@ -15,20 +15,6 @@ load_dotenv()
 
 TOKEN = os.getenv("TOKEN")
 
-package_dir = os.path.dirname(os.path.abspath(__file__))
-localize_path = os.path.join(package_dir, "localize_ru.json")
-error_path = os.path.join(package_dir, "errors_ru.json")
-
-def translate_data(data):
-    with open(localize_path, 'r', encoding='utf-8') as file:
-        translations = json.load(file)
-    if isinstance(data, list):
-        return [translate_data(item) for item in data]
-    elif isinstance(data, dict):
-        return {translations.get(k, k): translate_data(v) for k, v in data.items()}
-    else:
-        return data
-
 def process_command(command_body, body):
     command_body = command_body.replace("'", '"')
     command_elements = command_body.split(",")
@@ -57,7 +43,7 @@ def request_mmo(command="", body=None):
         name = base_command[1]
         if name not in ["characters", "bank"]:
             data = request_mmo(f"/characters/{name}")
-            cooldown = check_cooldown(data["data"]["Окончание кулдауна"])
+            cooldown = check_cooldown(data["data"]["cooldown_expiration"])
             if cooldown > 0:
                 logger.debug(f"{name} в кулдауне на {cooldown} сек.")
                 time.sleep(cooldown)

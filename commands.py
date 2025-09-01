@@ -1,16 +1,16 @@
 from request_mmo import request_mmo
 from utils import *
 
-def scan_data(data_type="all", all_data=True):
+def scan_data(data_type="all", all_data=True, scanning=False):
     if data_type == "all":
         for scan in ["maps", "items", "resources", "monsters"]:
-            scan_data(scan)
+            scan_data(scan, scanning=scanning)
         return
     if all_data is True:
         cache_file = f"{data_type}.json"
         cache_data = load_file(cache_file, True)
         
-        if cache_data is not None:
+        if cache_data is not None and scanning != True:
             cache_time = datetime.fromisoformat(cache_data['timestamp'])
             if datetime.now() - cache_time < timedelta(hours=1):
                 logger.debug(f"Данные {data_type} из кеша")
@@ -102,7 +102,7 @@ def check_tool(character, item_type):
         
         return best_item
     
-    best_inventory_item = find_best_item(character["Инвентарь"])
+    best_inventory_item = find_best_item(character["inventory"])
     
     bank_inventory = request_mmo("/my/bank/items")["data"]
     best_bank_item = find_best_item(bank_inventory)
@@ -115,8 +115,8 @@ def check_tool(character, item_type):
         equip = None
     
     if equip:
-        equip_item = character["Оружие"]
-        if equip == equip_item:
+        equip_item = character["weapon_slot"]
+        if equip["tool"] == equip_item:
             equip = None
 
     return equip
