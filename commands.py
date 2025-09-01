@@ -76,6 +76,7 @@ def check_tool(character, item_type):
     
     def find_best_item(inventory_items):
         best_item = None
+        best_critical_value = 0
         
         for inventory_item in inventory_items:
             item_code = inventory_item.get("code")
@@ -87,30 +88,35 @@ def check_tool(character, item_type):
                 continue
             
             if item_type == "mob":
-                if (item_data.get("type") == "weapon" and 
-                    item_data.get("Подtype") in ["", "sword", "axe", "mace", "dagger"]):
-                    level = item_data.get("Уровень", 0)
-                    if best_item is None or level > best_item["level"]:
-                        best_item = {"item": item_data, "level": level}
+                if item_data.get("type") == "weapon":
+                    critical_value = 0
+                    for effect in item_data.get("effects", []):
+                        if effect.get("code") == "critical_strike":
+                            critical_value = effect.get("value", 0)
+                            break
+                    if best_item is None or critical_value > best_critical_value:
+                        best_item = item_data
+                        best_critical_value = critical_value
             else:
                 for effect in item_data.get("effects", []):
                     if effect.get("code") == item_type:
-                        level = item_data.get("Уровень", 0)
+                        level = item_data.get("level", 0)
                         if best_item is None or level > best_item["level"]:
-                            best_item = {"item": item_data, "level": level}
+                            best_item = item_data
                         break
-        
         return best_item
     
     best_inventory_item = find_best_item(character["inventory"])
     
     bank_inventory = request_mmo("/my/bank/items")["data"]
     best_bank_item = find_best_item(bank_inventory)
+    best_item = [best_inventory_item, best_bank_item]
+    best_inventory = find_best_item(best_item)
     
-    if best_inventory_item:
-        equip = {"equip": "inventory", "tool": best_inventory_item["item"]["code"]}
-    elif best_bank_item:
-        equip = {"equip": "bank", "tool": best_bank_item["item"]["code"]}
+    if best_inventory == best_inventory_item:
+        equip = {"equip": "inventory", "tool": best_inventory["code"]}
+    elif best_inventory == best_bank_item:
+        equip = {"equip": "bank", "tool": best_inventory["code"]}
     else:
         equip = None
     
@@ -125,13 +131,13 @@ def restore_health(character, min_health=30):
     if isinstance(character, list):
         character = character[0]
     
-    health = character['health']
-    max_health = character['max_health']
+    health = character['hp']
+    max_health = character['max_hp']
     threshold = max_health * min_health / 100
 
     if health < threshold:
         request_mmo(f"/my/{character['name']}/action/rest", True)
-        logger.info(f"{character['name']} восстановил health")
+        logger.info(f"{character['name']} восстановил здоровье")
 
 def gathering(character):
     data = request_mmo(f"/my/{character['name']}/action/gathering", True)
