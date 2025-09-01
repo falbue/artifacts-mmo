@@ -8,6 +8,20 @@ from datetime import datetime, timezone
 
 logger = logger.setup(True)
 
+package_dir = os.path.dirname(os.path.abspath(__file__))
+localize_path = os.path.join(package_dir, "localize/localize_ru.json")
+error_path = os.path.join(package_dir, "localize/errors_ru.json")
+
+def translate_data(data):
+    with open(localize_path, 'r', encoding='utf-8') as file:
+        translations = json.load(file)
+    if isinstance(data, list):
+        return [translate_data(item) for item in data]
+    elif isinstance(data, dict):
+        return {translations.get(k, k): translate_data(v) for k, v in data.items()}
+    else:
+        return data
+
 def save_file(filename, data):
     try:
         if not filename.lower().endswith('.json'):
@@ -40,11 +54,16 @@ def load_file(filename, all_data=False):
                 return json.load(f)["data"]
     return None
 
-def print_mmo(data):
+def print_mmo(data, localize="en"):
     if isinstance(data, (dict, list)):
-        print( json.dumps(data, indent=4, ensure_ascii=False))
+        text = ( json.dumps(data, indent=4, ensure_ascii=False))
     else:
-        print( str(data))
+        text = ( str(data))
+
+    if localize == "en":
+        print(text)
+    elif localize == "ru":
+        print(translate_data(text))
 
 
 
@@ -53,33 +72,33 @@ def find_resource(resource_code):
 
     target_item = None
     for item in items:
-        if item["Код"] == resource_code:
+        if item["code"] == resource_code:
             target_item = item
             break
 
     if not target_item:
         return None
 
-    if target_item["Тип"] != "resource":
+    if target_item["type"] != "resource":
         return None
 
-    skill_type = target_item["Подтип"]
+    skill_type = target_item["subtype"]
     target_resource_codes = []
 
     if skill_type == "mob":
         monsters = load_file("monsters.json")
         for resource in monsters:
             for drop in resource["drops"]:
-                if drop["Код"] == resource_code:
-                    target_resource_codes.append(resource["Код"])
+                if drop["code"] == resource_code:
+                    target_resource_codes.append(resource["code"])
                     break 
     else:
         resources = load_file("resources.json")
         for resource in resources:
             if resource["skill"] == skill_type:
                 for drop in resource["drops"]:
-                    if drop["Код"] == resource_code:
-                        target_resource_codes.append(resource["Код"])
+                    if drop["code"] == resource_code:
+                        target_resource_codes.append(resource["code"])
                         break
 
     return skill_type, find_map_object(target_resource_codes)
@@ -88,9 +107,9 @@ def find_map_object(resource_code):
     maps = load_file("maps.json")
     coordinates = []
     for map_obj in maps:
-        content = map_obj.get("Контент", {})
+        content = map_obj.get("content", {})
         if content:
-            if content.get("Код") in resource_code:
+            if content.get("code") in resource_code:
                 coordinates.append({"x": map_obj["x"], "y": map_obj["y"]})
     
     if len(coordinates) == 1:
@@ -137,25 +156,25 @@ def check_cooldown(server_time_str):
 
 def find_character(data, character_name):
     for character in data['data']:
-        if character['Имя'] == character_name:
+        if character['name'] == character_name:
             return character
     return None
 
 def find_item_inventory(item, inventory):
     item_inventory_found = False
     for inventory_item in inventory:
-        if inventory_item["Код"] == item:
+        if inventory_item["code"] == item:
             item_inventory_found = True
             break
     if not item_inventory_found:
         logger.warning(f"{item} не найден в инвентаре")
         return 0
-    return inventory_item["Количество"]
+    return inventory_item["quantity"]
 
 def check_craftable(crafting_item):
     items = load_file("items.json")
     for item in items:
-        if item.get("Код") == crafting_item:
+        if item.get("code") == crafting_item:
             craftable = item.get("craft")
             if craftable:
                 return True

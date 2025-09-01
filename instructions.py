@@ -23,14 +23,14 @@ def extraction(character, resource, quantity=1):
         crafting(character, resource, quantity)
         return
     skill, coordinates = find_resource(resource)
-    name = character["Имя"]
+    name = character["name"]
     tool = check_tool(character, skill)
     if tool:
         if tool["equip"] == "bank":
             deposit_bank(character, item=tool["tool"], quantity=1, take_items=True)
         equip_item(character, item=tool["tool"])
     request_mmo(f"/my/{name}/action/move", coordinates)
-    logger.debug(f"{character['Имя']} приступил к добыванию ресурса {resource}")
+    logger.debug(f"{character['name']} приступил к добыванию ресурса {resource}")
 
     gathered_count = 0
     while gathered_count < quantity:
@@ -43,37 +43,37 @@ def extraction(character, resource, quantity=1):
 
         found_target_resource = False
         for item_data in items:
-            if item_data["Код"] == resource:
+            if item_data["code"] == resource:
                 found_target_resource = True
                 gathered_count += 1
                 logger.debug(f'Успешно добыт {resource}')
             else:
-                logger.debug(f'Добыт {item_data["Код"]} вместо {resource}')
-    logger.info(f"{character['Имя']} добыл {gathered_count} {resource}")
+                logger.debug(f'Добыт {item_data["code"]} вместо {resource}')
+    logger.info(f"{character['name']} добыл {gathered_count} {resource}")
     return
 
 def crafting(character, crafting_item=None, quantity=1):
     items = scan_data("items")
-    name = character["Имя"]
+    name = character["name"]
 
     for item in items:
-        if item.get("Код") == crafting_item:
+        if item.get("code") == crafting_item:
             craft_items = item["craft"]["items"]
             for craft_item in craft_items:
-                quantity_craft = craft_item["Количество"] * quantity
-                find_item = find_item_inventory(craft_item["Код"], character["Инвентарь"])
+                quantity_craft = craft_item["quantity"] * quantity
+                find_item = find_item_inventory(craft_item["code"], character["Инвентарь"])
                 if find_item <= quantity_craft:
                     bank_inventory = request_mmo("/my/bank/items")["data"]
-                    find_item_bank = find_item_inventory(craft_item["Код"], bank_inventory)
+                    find_item_bank = find_item_inventory(craft_item["code"], bank_inventory)
                     if find_item_bank + find_item < quantity_craft:
                         give_bank = "all"
-                        logger.debug(f"{name} не хватило {quantity_craft - (find_item + find_item_bank)} {craft_item['Код']} для крафта {crafting_item}")
-                        extraction(character, craft_item["Код"], quantity_craft - (find_item + find_item_bank))
+                        logger.debug(f"{name} не хватило {quantity_craft - (find_item + find_item_bank)} {craft_item['code']} для крафта {crafting_item}")
+                        extraction(character, craft_item["code"], quantity_craft - (find_item + find_item_bank))
                     else:
                         give_bank = quantity_craft
 
                     if find_item_bank > 0: 
-                        deposit_bank(character, item=craft_item["Код"], quantity=quantity_craft-find_item, take_items=True)
+                        deposit_bank(character, item=craft_item["code"], quantity=quantity_craft-find_item, take_items=True)
 
 
 
@@ -87,7 +87,7 @@ def crafting(character, crafting_item=None, quantity=1):
 def equip_item(character, item="", quantity=1):
     slot = scan_data("items", item)
     if slot:
-        slot = slot["Тип"]
+        slot = slot["type"]
         if slot == "ring":
             if character["Кольцо 1"] == "":
                 slot = 'ring1'
@@ -103,7 +103,7 @@ def equip_item(character, item="", quantity=1):
         }
     else:return
 
-    name = character["Имя"]
+    name = character["name"]
     request_mmo(f"/my/{name}/action/equip", body)
 
 def deposit_bank(character, item="all", quantity="all", take_items="deposit"):
@@ -122,14 +122,14 @@ def deposit_bank(character, item="all", quantity="all", take_items="deposit"):
     package = []
 
     coordinates = find_workshop("bank")
-    name = character["Имя"]
+    name = character["name"]
     request_mmo(f"/my/{name}/action/move", coordinates)
     inventory = character["Инвентарь"]
     if item == "all":
         if take_items == "deposit":
             for inventory_item in inventory:
-                code = inventory_item["Код"] 
-                quantity = inventory_item["Количество"]
+                code = inventory_item["code"] 
+                quantity = inventory_item["quantity"]
                 if quantity > 0:
                     package.append({"code": code, "quantity": quantity})
         else:
@@ -156,8 +156,8 @@ def deposit_bank(character, item="all", quantity="all", take_items="deposit"):
     request_mmo(f"/my/{name}/action/bank/{take_items}/item", package)
 
 def fighting(character, mob="chicken", fights=1):
-    name = character["Имя"]
+    name = character["name"]
     coordinates = find_map_object(mob)
     request_mmo(f"/my/{name}/action/move", coordinates)
-    logger.debug(f"{character['Имя']} начинает бой с {mob}")
+    logger.debug(f"{character['name']} начинает бой с {mob}")
     fight(character, fights)

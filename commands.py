@@ -45,8 +45,8 @@ def find_workshop(craftable):
     results = []
     maps = scan_data("maps")
     for item in maps:
-        if item.get("Контент"):
-            if item["Контент"].get("Код") == craftable:
+        if item.get("content"):
+            if item["content"].get("code") == craftable:
                 x = item.get("x")
                 y = item.get("y")
                 if x is not None and y is not None:
@@ -72,13 +72,13 @@ def load_characters(character):
 
 def check_tool(character, item_type):
     items_data = scan_data("items")
-    items_dict = {item["Код"]: item for item in items_data if "Код" in item}
+    items_dict = {item["code"]: item for item in items_data if "code" in item}
     
     def find_best_item(inventory_items):
         best_item = None
         
         for inventory_item in inventory_items:
-            item_code = inventory_item.get("Код")
+            item_code = inventory_item.get("code")
             if not item_code:
                 continue
 
@@ -87,14 +87,14 @@ def check_tool(character, item_type):
                 continue
             
             if item_type == "mob":
-                if (item_data.get("Тип") == "weapon" and 
-                    item_data.get("Подтип") in ["", "sword", "axe", "mace", "dagger"]):
+                if (item_data.get("type") == "weapon" and 
+                    item_data.get("Подtype") in ["", "sword", "axe", "mace", "dagger"]):
                     level = item_data.get("Уровень", 0)
                     if best_item is None or level > best_item["level"]:
                         best_item = {"item": item_data, "level": level}
             else:
                 for effect in item_data.get("effects", []):
-                    if effect.get("Код") == item_type:
+                    if effect.get("code") == item_type:
                         level = item_data.get("Уровень", 0)
                         if best_item is None or level > best_item["level"]:
                             best_item = {"item": item_data, "level": level}
@@ -108,9 +108,9 @@ def check_tool(character, item_type):
     best_bank_item = find_best_item(bank_inventory)
     
     if best_inventory_item:
-        equip = {"equip": "inventory", "tool": best_inventory_item["item"]["Код"]}
+        equip = {"equip": "inventory", "tool": best_inventory_item["item"]["code"]}
     elif best_bank_item:
-        equip = {"equip": "bank", "tool": best_bank_item["item"]["Код"]}
+        equip = {"equip": "bank", "tool": best_bank_item["item"]["code"]}
     else:
         equip = None
     
@@ -125,16 +125,16 @@ def restore_health(character, min_health=30):
     if isinstance(character, list):
         character = character[0]
     
-    health = character['Здоровье']
-    max_health = character['Максимальное здоровье']
+    health = character['health']
+    max_health = character['max_health']
     threshold = max_health * min_health / 100
 
     if health < threshold:
-        request_mmo(f"/my/{character['Имя']}/action/rest", True)
-        logger.info(f"{character['Имя']} восстановил здоровье")
+        request_mmo(f"/my/{character['name']}/action/rest", True)
+        logger.info(f"{character['name']} восстановил health")
 
 def gathering(character):
-    data = request_mmo(f"/my/{character['Имя']}/action/gathering", True)
+    data = request_mmo(f"/my/{character['name']}/action/gathering", True)
     return data
 
 
@@ -142,13 +142,13 @@ def fight(character, fights=1):
     restore_health(character)
     for _ in range(fights):
         try:
-            data = request_mmo(f"/my/{character['Имя']}/action/fight", True)
+            data = request_mmo(f"/my/{character['name']}/action/fight", True)
         except:
-            logger.info(f"{character['Имя']} умер!")
+            logger.info(f"{character['name']} умер!")
             return
     return data
 
 def craft(character, resource, quantity):
-    name = character['Имя']
+    name = character['name']
     logger.debug(f"{name} начал крафт {resource}")
     request_mmo(f"/my/{name}/action/crafting", {"code":resource, "quantity":quantity})

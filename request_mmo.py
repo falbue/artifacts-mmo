@@ -76,7 +76,6 @@ def request_mmo(command="", body=None):
         response = requests.get(f"https://api.artifactsmmo.com/{command}", headers={"Authorization": f"Bearer {TOKEN}"})
 
     data = response.json()
-    data = translate_data(data)
     error_int = 0
     if data.get('error'):
         with open(error_path, 'r', encoding='utf-8') as file:
