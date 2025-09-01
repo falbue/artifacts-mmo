@@ -108,11 +108,18 @@ def check_tool(character, item_type):
     best_bank_item = find_best_item(bank_inventory)
     
     if best_inventory_item:
-        return {"equip": "inventory", "tool": best_inventory_item["item"]["Код"]}
+        equip = {"equip": "inventory", "tool": best_inventory_item["item"]["Код"]}
     elif best_bank_item:
-        return {"equip": "bank", "tool": best_bank_item["item"]["Код"]}
+        equip = {"equip": "bank", "tool": best_bank_item["item"]["Код"]}
+    else:
+        equip = None
     
-    return None
+    if equip:
+        equip_item = character["Оружие"]
+        if equip == equip_item:
+            equip = None
+
+    return equip
 
 def restore_health(character, min_health=30):
     if isinstance(character, list):
@@ -134,9 +141,11 @@ def gathering(character):
 def fight(character, fights=1):
     restore_health(character)
     for _ in range(fights):
-        data = request_mmo(f"/my/{character['Имя']}/action/fight", True)
-        if data == 598:
+        try:
+            data = request_mmo(f"/my/{character['Имя']}/action/fight", True)
+        except:
             logger.info(f"{character['Имя']} умер!")
+            return
     return data
 
 def craft(character, resource, quantity):
