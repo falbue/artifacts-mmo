@@ -26,9 +26,7 @@ def extraction(character, resource, quantity=1):
     name = character["name"]
     tool = check_tool(character, skill)
     if tool:
-        if tool["equip"] == "bank":
-            deposit_bank(character, item=tool["tool"], quantity=1, take_items=True)
-        equip_item(character, item=tool["tool"])
+        equip_item(character, item=tool)
     request_mmo(f"/my/{name}/action/move", coordinates)
     logger.debug(f"{character['name']} приступил к добыванию ресурса {resource}")
 

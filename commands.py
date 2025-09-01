@@ -111,26 +111,22 @@ def check_tool(character, item_type):
     bank_inventory = request_mmo("/my/bank/items")["data"]
     best_bank_item = find_best_item(bank_inventory)
     
-    best_item = []
-    if best_inventory_item: best_item.append(best_inventory_item)
-    if best_bank_item: best_item.append(best_bank_item)
-    best_inventory = find_best_item(best_item)
-    
-    if best_inventory == best_inventory_item:
-        equip = {"equip": "inventory", "tool": best_inventory["code"]}
-    elif best_inventory == best_bank_item:
-        equip = {"equip": "bank", "tool": best_inventory["code"]}
-    else:
-        equip = None
-        logger.debug(f"{character['name']} не нашёл подходящего инструмента")
-    
-    if equip:
-        equip_item = character["weapon_slot"]
-        if equip["tool"] == equip_item:
-            equip = None
-            logger.debug(f"На {character['name']} уже экиперован {equip_item}")
+    best_items = []
+    if best_inventory_item: best_items.append(best_inventory_item)
+    if best_bank_item: best_items.append(best_bank_item)
+    best_item = find_best_item(best_items)
 
-    return equip
+    if best_item:
+        equip_item = character["weapon_slot"]
+        if best_item["code"] == equip_item:
+            logger.debug(f"На {character['name']} уже экиперован {equip_item}")
+            return
+    else:
+        logger.debug(f"{character['name']} не нашёл подходящего инструмента")
+        return
+    
+
+    return best_item["code"]
 
 def restore_health(character, min_health=30):
     if isinstance(character, list):
