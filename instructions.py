@@ -36,7 +36,10 @@ def extraction(character, resource, quantity=1):
     while gathered_count < quantity:
         if skill == "mob":
             data = fight(character)
-            items = data['data']["fight"]["drops"]
+            if data:
+                items = data['data']["fight"]["drops"]
+            else:
+                return
         else:
             data = gathering(character)
             items = data["data"]["details"]["items"]
