@@ -85,6 +85,15 @@ def crafting(character, crafting_item=None, quantity=1):
             return
 
 def equip_item(character, item="", quantity=1):
+    inventory = find_item_inventory(item, character["inventory"])
+    if inventory == 0:
+        inventory = find_item_inventory(item, request_mmo("/my/bank/items")["data"])
+        if inventory == 0:
+            logger.warning(f"Невозможно надеть {item}. Не найден в банке и инвентаре")
+            return
+        else:
+            deposit_bank(character, item=item, quantity=quantity, take_items=True)
+
     slot = scan_data("items", item)
     if slot:
         slot = slot["type"]
