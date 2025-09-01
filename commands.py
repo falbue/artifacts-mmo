@@ -113,17 +113,19 @@ def check_tool(character, item_type):
     best_item = [best_inventory_item, best_bank_item]
     best_inventory = find_best_item(best_item)
     
-    if best_inventory == best_inventory_item:
+    if best_inventory["code"] == best_inventory_item["code"]:
         equip = {"equip": "inventory", "tool": best_inventory["code"]}
-    elif best_inventory == best_bank_item:
+    elif best_inventory["code"] == best_bank_item["code"]:
         equip = {"equip": "bank", "tool": best_inventory["code"]}
     else:
         equip = None
+        logger.debug(f"{character['name']} не нашёл подходящего инструмента")
     
     if equip:
         equip_item = character["weapon_slot"]
         if equip["tool"] == equip_item:
             equip = None
+            logger.debug(f"На {character['name']} уже экиперован {equip_item}")
 
     return equip
 
