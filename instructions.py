@@ -70,11 +70,10 @@ def crafting(character, crafting_item=None, quantity=1):
                         give_bank = "all"
                         logger.debug(f"{name} не хватило {quantity_craft - (find_item + find_item_bank)} {craft_item['code']} для крафта {crafting_item}")
                         extraction(character, craft_item["code"], quantity_craft - (find_item + find_item_bank))
-                    else:
-                        give_bank = quantity_craft
-
-                    if find_item_bank > 0: 
-                        deposit_bank(character, item=craft_item["code"], quantity=quantity_craft-find_item, take_items=True)
+                    elif find_item_bank + find_item >= quantity_craft:
+                        give_bank = quantity_craft - find_item
+                        if give_bank > 0: 
+                            deposit_bank(character, item=craft_item["code"], quantity=give_bank, take_items=True)
 
 
 
