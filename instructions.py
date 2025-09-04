@@ -228,6 +228,7 @@ def fighting(character, mob="chicken", fights=1):
 def complete_task(character):
     task = character['task']
     task_total = character["task_total"]
+    task_progress = character["task_progress"]
     task_type = character['task_type']
     name = character["name"]
     logger.debug(f"{name} приступил к выполнению задания {task}")
@@ -252,5 +253,29 @@ def complete_task(character):
         logger.info(f"{name} выполнил задание {task}")
         return
     else:
-        logger.warning(f"Пока это задание невозможно выполнить")
+        fights = task_total - task_progress
+        fighting(character, task, fights)
         return
+
+def new_task(character, task_type="items"):
+    result = character["task"]
+    name = character["name"]
+    if result == "":
+        name = character["name"]
+        coordinates = find_workshop(task_type)
+        request_mmo(f"/my/{name}/action/move", coordinates)
+        logger.debug(f"{name} пришёл к мастеру {task_type}")
+        data = request_mmo(f"/my/{name}/action/task/new", True)["data"]
+        logger.info(f"{name} получил задание {data['task']['code']}")
+    else:
+        logger.debug(f"{name} уже имеет задание {result}")
+    return
+
+def solution_task(character, task_type="items"):
+    result = character["task"]
+    if result != "":
+        complete_task(character)
+    else:
+        new_task(character, task_type)
+        complete_task(character)
+    return
