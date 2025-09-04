@@ -147,12 +147,11 @@ def gathering(character):
 
 def fight(character, fights=1):
     restore_health(character)
-    for _ in range(fights):
-        try:
-            data = request_mmo(f"/my/{character['name']}/action/fight", True)
-        except:
-            logger.info(f"{character['name']} умер!")
-            return
+    for i in range(fights):
+        data = request_mmo(f"/my/{character['name']}/action/fight", True)
+        if data["data"]['fight'].get("result") == "loss":
+            logger.info(f"{character['name']} умер, выйграв {i} раз!")
+            return False, i
     return data
 
 def craft(character, resource, quantity):

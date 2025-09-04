@@ -34,10 +34,10 @@ def extraction(character, resource, quantity=1):
     while gathered_count < quantity:
         if skill == "mob":
             data = fight(character)
-            if data:
+            if data["data"]['fight'].get("result") != "loss":
                 items = data['data']["fight"]["drops"]
             else:
-                return
+                extraction(character, resource, quantity=quantity - gathered_count)
         else:
             data = gathering(character)
             items = data["data"]["details"]["items"]
@@ -214,7 +214,9 @@ def fighting(character, mob="chicken", fights=1):
     coordinates = find_map_object(mob)
     request_mmo(f"/my/{name}/action/move", coordinates)
     logger.debug(f"{character['name']} начинает бой с {mob}")
-    fight(character, fights)
+    data = fight(character, fights)
+    if data[0] == False:
+        fighting(character, mob=mob, fights=fights - data[1])
 
 def complete_task(character):
     task = character['task']
@@ -225,7 +227,7 @@ def complete_task(character):
     if task_type == "items":
         result1 = find_item_inventory(task, character["inventory"])
         result2 = find_item_inventory(task, request_mmo("/my/bank/items")["data"])
-        if result2 > 0:
+        if result2 > 0 and result1 < task_total:
             deposit_bank(character, item=task, quantity="all", take_items=True)
         if result1 + result2 <= task_total:
             result3 = task_total - result2 - result1
