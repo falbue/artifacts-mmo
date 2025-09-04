@@ -147,12 +147,12 @@ def deposit_bank(character, item="all", quantity="all", take_items="deposit"):
     inventory = character["inventory"]
 
     if item == "all": # получаем все предметы для депозита
-        gold["quantity"] = inventory['gold']
+        gold["quantity"] = character['gold']
         for inventory_item in inventory:
             code = inventory_item["code"] 
-            quantity = inventory_item["quantity"]
-            if quantity > 0:
-                package.append({"code": code, "quantity": quantity})
+            quantity_item = inventory_item["quantity"]
+            if quantity_item > 0:
+                package.append({"code": code, "quantity": quantity_item})
 
     else: # получаем нужный предмет для обмена
         if item == "gold": # работа с золотом
@@ -196,8 +196,10 @@ def deposit_bank(character, item="all", quantity="all", take_items="deposit"):
     if item == "gold":
         request_mmo(f"/my/{name}/action/bank/{take_items}/gold", gold)
     elif item == "all":
-        request_mmo(f"/my/{name}/action/bank/{take_items}/gold", gold)
-        request_mmo(f"/my/{name}/action/bank/{take_items}/item", package)
+        if gold["quantity"] > 0:
+            request_mmo(f"/my/{name}/action/bank/{take_items}/gold", gold)
+        if package != []:
+            request_mmo(f"/my/{name}/action/bank/{take_items}/item", package)
     else:
         request_mmo(f"/my/{name}/action/bank/{take_items}/item", package)
 
