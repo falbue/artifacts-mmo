@@ -55,7 +55,6 @@ def extraction(character, resource, quantity=1):
         if result is True:
             logger.warning(f"Инвентарь {name} полный")
             deposit_bank(character, item="all", quantity="all", take_items="deposit")
-            extraction(character, resource, quantity=quantity - gathered_count)
 
     logger.info(f"{character['name']} добыл {gathered_count} {resource}")
     return
@@ -238,9 +237,8 @@ def complete_task(character):
         if result2 > 0 and result1 < task_total:
             deposit_bank(character, item=task, quantity="all", take_items=True)
         if result1 + result2 <= task_total:
-            result3 = task_total - result2 - result1
-            if result3 > 0:
-                extraction(character, task, result3)
+            if 0 < task_total - result2 - result1:
+                extraction(character, task, task_total)
 
         coordinates = find_workshop("items")
         request_mmo(f"/my/{name}/action/move", coordinates)
