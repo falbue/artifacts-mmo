@@ -53,7 +53,7 @@ def extraction(character, resource, quantity=1):
     logger.info(f"{character['name']} добыл {gathered_count} {resource}")
     return
 
-def crafting(character, crafting_item=None, quantity=1):
+def crafting(character, crafting_item=None, quantity=1, ):
     items = scan_data("items")
     name = character["name"]
 
@@ -215,3 +215,33 @@ def fighting(character, mob="chicken", fights=1):
     request_mmo(f"/my/{name}/action/move", coordinates)
     logger.debug(f"{character['name']} начинает бой с {mob}")
     fight(character, fights)
+
+def complete_task(character):
+    task = character['task']
+    task_total = character["task_total"]
+    task_type = character['task_type']
+    name = character["name"]
+    logger.debug(f"{name} приступил к выполнению задания {task}")
+    if task_type == "items":
+        result1 = find_item_inventory(task, character["inventory"])
+        result2 = find_item_inventory(task, request_mmo("/my/bank/items")["data"])
+        if result2 > 0:
+            deposit_bank(character, item=task, quantity="all", take_items=True)
+        if result1 + result2 <= task_total:
+            result3 = task_total - result2 - result1
+            if result3 > 0:
+                extraction(character, task, result3)
+
+        coordinates = find_workshop("items")
+        request_mmo(f"/my/{name}/action/move", coordinates)
+        logger.debug(f"{name} пришёл к мастеру {task_type}")
+
+        request_mmo(f"/my/{name}/action/task/trade", {"code": task, "quantity": task_total})
+        logger.debug(f"{name} отдал мастеру {task_type} {task_total} {task}")
+
+        request_mmo(f"/my/{name}/action/task/complete", True)
+        logger.info(f"{name} выполнил задание {task}")
+        return
+    else:
+        logger.warning(f"Пока это задание невозможно выполнить")
+        return
