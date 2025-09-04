@@ -217,6 +217,9 @@ def deposit_bank(character, item="all", quantity="all", take_items="deposit"):
 
 def fighting(character, mob="chicken", fights=1):
     name = character["name"]
+    tool = check_tool(character, "mob")
+    if tool:
+        equip_item(character, item=tool)
     coordinates = find_map_object(mob)
     request_mmo(f"/my/{name}/action/move", coordinates)
     logger.debug(f"{character['name']} начинает бой с {mob}")
