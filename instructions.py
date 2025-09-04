@@ -50,6 +50,13 @@ def extraction(character, resource, quantity=1):
                 logger.debug(f'Успешно добыт {resource}')
             else:
                 logger.debug(f'Добыт {item_data["code"]} вместо {resource}')
+
+        result = inventory_full(data)
+        if result is True:
+            logger.warning(f"Инвентарь {name} полный")
+            deposit_bank(character, item="all", quantity="all", take_items="deposit")
+            extraction(character, resource, quantity=quantity - gathered_count)
+
     logger.info(f"{character['name']} добыл {gathered_count} {resource}")
     return
 

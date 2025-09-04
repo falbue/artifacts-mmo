@@ -178,3 +178,13 @@ def check_craftable(crafting_item):
             if craftable:
                 return True
     return False
+
+def inventory_full(character):
+    max_items = character.get("inventory_max_items", 0)
+    inventory = character.get("inventory", [])
+    total_items = 0
+    for item in inventory:
+        if item.get("code") and item.get("code") != "":
+            total_items += item.get("quantity", 0)
+            
+    return total_items >= max_items
