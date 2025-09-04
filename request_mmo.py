@@ -71,7 +71,7 @@ def request_mmo(command="", body=None):
             if error is None:
                 error = f"Неизвестная ошибка: {response.status_code}"
         if error_int  in [490, 499, 485]:
-            logger.debug(f"{error} {command}")
+            logger.error(f"{error} {command}")
         else:
             error_message = f"{error_int} {error} {command} {body}"
             logger.error(error_message)

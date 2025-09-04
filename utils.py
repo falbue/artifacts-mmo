@@ -167,7 +167,6 @@ def find_item_inventory(item, inventory):
             item_inventory_found = True
             break
     if not item_inventory_found:
-        logger.warning(f"{item} не найден в инвентаре")
         return 0
     return inventory_item["quantity"]
 

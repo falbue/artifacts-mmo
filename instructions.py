@@ -118,51 +118,94 @@ def equip_item(character, item="", quantity=1):
 def deposit_bank(character, item="all", quantity="all", take_items="deposit"):
     items = scan_data("items")
 
-    if take_items != "deposit":
-        take_items = "withdraw"
+    package = [] # предметы, для обмена
+    gold = {} # золото
 
-    if take_items == "withdraw":
-        bank_inventory = request_mmo("/my/bank/items")["data"]
-        bank_item_quantity = find_item_inventory(item, bank_inventory)
-        if bank_item_quantity is None:
+    if take_items != "deposit": # взятие из банка
+        take_items = "withdraw"
+        if item == "all": # проверка на возможность взятия всех предметов
+            logger.warning(f"{name} не сможет забрать всё из банка")
             return
-        if quantity == "all":
-            quantity = bank_item_quantity 
-    package = []
+
+    if take_items == "withdraw": # Проверка, на наличие нужного предмета
+        if item == "gold" and quantity != "all":
+            bank_gold = request_mmo("my/bank")["data"]["gold"]
+            if bank_gold < quantity:
+                logger.error(f"В банке не хватило {quantity - bank_gold} для {name}")
+                return
+        else:
+            bank_inventory = request_mmo("/my/bank/items")["data"]
+            bank_item_quantity = find_item_inventory(item, bank_inventory)
+            if bank_item_quantity is None:
+                logger.error(f"{name} не нашёл в банке {item}")
+                return
+    
+            if quantity == "all" and item != "gold":
+                quantity = bank_item_quantity 
+
+    name = character["name"]
+    inventory = character["inventory"]
+
+    if item == "all": # получаем все предметы для депозита
+        gold["quantity"] = inventory['gold']
+        for inventory_item in inventory:
+            code = inventory_item["code"] 
+            quantity = inventory_item["quantity"]
+            if quantity > 0:
+                package.append({"code": code, "quantity": quantity})
+
+    else: # получаем нужный предмет для обмена
+        if item == "gold": # работа с золотом
+            if take_items == "deposit": 
+                gold_quantity = character["gold"]
+                if quantity == "all":
+                    quantity = gold_quantity
+                    if gold_quantity < quantity:
+                        logger.error(f"У {name} не хватает {quantity - gold_quantity} золота")
+                        return
+            
+            if take_items == "withdraw" and quantity == "all":
+                bank_gold = request_mmo("my/bank")["data"]["gold"]
+                quantity = bank_gold
+            
+            if quantity == 0:
+                logger.warning(f"У {name} нет золота")
+                return
+            gold["quantity"] = quantity
+
+        if item != "gold": # работа с предметом
+            if take_items == "deposit":
+                item_quantity = find_item_inventory(item, inventory)
+                if quantity == "all":
+                    quantity = item_quantity
+                if item_quantity is None:
+                    logger.error("{item} не найден в инветаре {name}")
+                    return
+                elif item_quantity < quantity:
+                    logger.error(f"В инвентаре {name} не хватает {quantity - item_quantity} {item}")
+                    return    
+            if quantity == 0:
+                logger.warning(f"У {name} нет {item}")
+                return
+            package = [{"code": item, "quantity":quantity}]
 
     coordinates = find_workshop("bank")
-    name = character["name"]
     request_mmo(f"/my/{name}/action/move", coordinates)
-    inventory = character["inventory"]
-    if item == "all":
-        if take_items == "deposit":
-            for inventory_item in inventory:
-                code = inventory_item["code"] 
-                quantity = inventory_item["quantity"]
-                if quantity > 0:
-                    package.append({"code": code, "quantity": quantity})
-        else:
-            logger.warning(f"{name} не сможет забрать всё из банка")
-            return 
-    else:
-        if take_items == "deposit":
-            item_quantity = find_item_inventory(item, inventory)
-            if item_quantity is None:
-                return
-            if  quantity == "all":
-                quantity = item_quantity
-        package = [{"code": item, "quantity":quantity}]
+    logger.debug(f"{name} пришёл в банк")
 
-    if not package:
-        logger.warning(f"inventory {name} пуст")
-        return
+    if item == "gold":
+        request_mmo(f"/my/{name}/action/bank/{take_items}/gold", gold)
+    elif item == "all":
+        request_mmo(f"/my/{name}/action/bank/{take_items}/gold", gold)
+        request_mmo(f"/my/{name}/action/bank/{take_items}/item", package)
+    else:
+        request_mmo(f"/my/{name}/action/bank/{take_items}/item", package)
 
     if take_items == "deposit":
-        logger.debug(f"{name} положил в банк {item}")
+        logger.debug(f"{name} положил в банк {quantity} {item}")
     else:
-        logger.debug(f"{name} взял из банка {item}")
+        logger.debug(f"{name} взял из банка {quantity} {item}")
 
-    request_mmo(f"/my/{name}/action/bank/{take_items}/item", package)
 
 def fighting(character, mob="chicken", fights=1):
     name = character["name"]
