@@ -18,6 +18,11 @@ def extraction(character, resource, quantity=1):
 
     gathered_count = 0
     while gathered_count < quantity:
+        result = inventory_full(character)
+        if result is True:
+            logger.warning(f"Инвентарь {name} полный")
+            deposit_bank(character, item="all", quantity="all", take_items="deposit")
+
         if skill == "mob":
             data = fight(character)
             if data["data"]['fight'].get("result") != "loss":
@@ -25,9 +30,8 @@ def extraction(character, resource, quantity=1):
             else:
                 extraction(character, resource, quantity=quantity - gathered_count)
         else:
-            if inventory_full(character):
-                data = gathering(character)
-                items = data["data"]["details"]["items"]
+            data = gathering(character)
+            items = data["data"]["details"]["items"]
 
         found_target_resource = False
         for item_data in items:
@@ -37,11 +41,6 @@ def extraction(character, resource, quantity=1):
                 logger.debug(f'Успешно добыт {resource}')
             else:
                 logger.debug(f'Добыт {item_data["code"]} вместо {resource}')
-
-        result = inventory_full(data)
-        if result is True:
-            logger.warning(f"Инвентарь {name} полный")
-            deposit_bank(character, item="all", quantity="all", take_items="deposit")
 
     logger.info(f"{character['name']} добыл {gathered_count} {resource}")
     return

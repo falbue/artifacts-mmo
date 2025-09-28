@@ -204,7 +204,6 @@ def check_craftable(crafting_item): # Проверка на крафт пред�
     return False
 
 def inventory_full(character): # Проверка, на заполненность инвентаря
-    character = character["data"]
     if character.get("character"):
         character = character["character"]
     max_items = character.get("inventory_max_items")
