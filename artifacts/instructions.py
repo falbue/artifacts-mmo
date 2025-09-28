@@ -1,32 +1,7 @@
 from .utils.request_mmo import request_mmo
 from .utils.utils import *
 from .commands import *
-
-_active_threads = []
-
-def character_action(func, character="all", *args, wait_action=False, **kwargs):
-    global _active_threads
-
-    if wait_action:
-        for thread in _active_threads:
-            thread.join()
-        _active_threads.clear()
-
-    characters = load_characters(character)
-    threads = []
-
-    for char in characters:
-        thread = threading.Thread(
-            target=func,
-            args=(char, *args),
-            kwargs=kwargs
-        )
-        thread.start()
-        threads.append(thread)
-
-    _active_threads.extend(threads)
-
-    return threads
+from .character_scheduler import *
 
 
 def extraction(character, resource, quantity=1):
