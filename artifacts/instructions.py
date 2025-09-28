@@ -2,20 +2,30 @@ from .utils.request_mmo import request_mmo
 from .utils.utils import *
 from .commands import *
 
+_active_threads = []
 
+def character_action(func, character="all", *args, wait_action=False, **kwargs):
+    global _active_threads
 
-def character_action(func, character, *args, **kwargs):
+    if wait_action:
+        for thread in _active_threads:
+            thread.join()
+        _active_threads.clear()
+
     characters = load_characters(character)
     threads = []
-    for character in characters:
+
+    for char in characters:
         thread = threading.Thread(
-            target=func, 
-            args=(character, *args), 
+            target=func,
+            args=(char, *args),
             kwargs=kwargs
         )
         thread.start()
         threads.append(thread)
-    
+
+    _active_threads.extend(threads)
+
     return threads
 
 
@@ -40,8 +50,9 @@ def extraction(character, resource, quantity=1):
             else:
                 extraction(character, resource, quantity=quantity - gathered_count)
         else:
-            data = gathering(character)
-            items = data["data"]["details"]["items"]
+            if inventory_full(character):
+                data = gathering(character)
+                items = data["data"]["details"]["items"]
 
         found_target_resource = False
         for item_data in items:
