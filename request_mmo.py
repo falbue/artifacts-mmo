@@ -78,3 +78,5 @@ def request_mmo(command="", body=None):
             raise Exception(error_message)
         data = error_int
     return data
+
+set_server_time_offset(request_mmo()["data"]["server_time"])

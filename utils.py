@@ -8,11 +8,13 @@ from datetime import datetime, timezone
 
 logger = logger.setup(True)
 
+_time_offset = None
+
 package_dir = os.path.dirname(os.path.abspath(__file__))
 localize_path = os.path.join(package_dir, "localize/localize_ru.json")
 error_path = os.path.join(package_dir, "localize/errors_ru.json")
 
-def translate_data(data):
+def translate_data(data): # перевод из указанного файла
     with open(localize_path, 'r', encoding='utf-8') as file:
         translations = json.load(file)
     if isinstance(data, list):
@@ -22,7 +24,7 @@ def translate_data(data):
     else:
         return data
 
-def save_file(filename, data):
+def save_file(filename, data): # сохранение файла
     try:
         if not filename.lower().endswith('.json'):
             logger.error(f"Ошибка: Файл {filename} не является JSON файлом")
@@ -44,7 +46,7 @@ def save_file(filename, data):
         logger.error(f"Ошибка при сохранении файла: {e}")
         return False
 
-def load_file(filename, all_data=False):
+def load_file(filename, all_data=False): # загрузка файла
     filepath = os.path.join('data', filename)
     if os.path.exists(filepath):
         with open(filepath, 'r', encoding='utf-8') as f:
@@ -54,7 +56,7 @@ def load_file(filename, all_data=False):
                 return json.load(f)["data"]
     return None
 
-def print_mmo(data, localize="en"):
+def print_mmo(data, localize="en"): # удобный вывод json
     if isinstance(data, (dict, list)):
         text = ( json.dumps(data, indent=4, ensure_ascii=False))
     else:
@@ -67,7 +69,7 @@ def print_mmo(data, localize="en"):
 
 
 
-def find_resource(resource_code):
+def find_resource(resource_code): # поиск нужного ресурса из файла
     items = load_file("items.json")
 
     target_item = None
@@ -103,7 +105,7 @@ def find_resource(resource_code):
 
     return skill_type, find_map_object(target_resource_codes)
 
-def find_map_object(resource_code):
+def find_map_object(resource_code): # поиск нужного объекта на карте
     maps = load_file("maps.json")
     coordinates = []
     for map_obj in maps:
@@ -117,7 +119,7 @@ def find_map_object(resource_code):
     return coordinates
 
 
-def nearest_object(object_coordinates, character_coordinates):
+def nearest_object(object_coordinates, character_coordinates): # поиск ближайщего объекта
     if not object_coordinates:
         return None
     
@@ -137,30 +139,48 @@ def nearest_object(object_coordinates, character_coordinates):
     return nearest_obj
 
 
-def check_cooldown(server_time_str):
+def set_server_time_offset(server_time_str): # Устанавливает смещение времени на основе серверного времени.
+    global _time_offset
     try:
         server_time = datetime.fromisoformat(server_time_str.replace('Z', '+00:00'))
-        current_time = datetime.now(timezone.utc)
+        local_time_at_request = datetime.now(timezone.utc)
+        _time_offset = server_time - local_time_at_request
+    except (ValueError, TypeError) as e:
+        print(f"Ошибка при установке смещения времени: {e}")
+        _time_offset = None
 
-        time_difference = (server_time - current_time).total_seconds()
-        
+
+def get_corrected_current_time(): # Возвращает текущее время, скорректированное по серверному.
+    if _time_offset is None:
+        raise RuntimeError("Смещение времени не установлено. Вызовите set_server_time_offset() сначала.")
+    
+    return datetime.now(timezone.utc) + _time_offset
+
+
+def check_cooldown(server_time_str): # Проверяет кулдаун, используя серверное время и коррекцию.
+    try:
+        server_time = datetime.fromisoformat(server_time_str.replace('Z', '+00:00'))
+        corrected_current_time = get_corrected_current_time()
+
+        time_difference = (server_time - corrected_current_time).total_seconds()
+
         if time_difference > 0:
             return int(time_difference)
         else:
             return 0
-            
+
     except (ValueError, TypeError) as e:
-        logger.error(f"Ошибка при обработке времени: {e}")
+        print(f"Ошибка при обработке времени: {e}")
         return 0
 
 
-def find_character(data, character_name):
+def find_character(data, character_name): # Поиск персонажа
     for character in data['data']:
         if character['name'] == character_name:
             return character
     return None
 
-def find_item_inventory(item, inventory):
+def find_item_inventory(item, inventory): # Поиск предемета в указанном инвентаре
     item_inventory_found = False
     for inventory_item in inventory:
         if inventory_item["code"] == item:
@@ -170,7 +190,7 @@ def find_item_inventory(item, inventory):
         return 0
     return inventory_item["quantity"]
 
-def check_craftable(crafting_item):
+def check_craftable(crafting_item): # Проверка на крафт предмета
     items = load_file("items.json")
     for item in items:
         if item.get("code") == crafting_item:
@@ -179,7 +199,7 @@ def check_craftable(crafting_item):
                 return True
     return False
 
-def inventory_full(character):
+def inventory_full(character): # Проверка, на заполненность инвентаря
     character = character["data"]
     if character.get("character"):
         character = character["character"]
