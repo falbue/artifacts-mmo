@@ -1,18 +1,22 @@
 import json
 import os
-import logger
 from datetime import datetime, timedelta
 import time
 import threading
 from datetime import datetime, timezone
+from pathlib import Path
 
-logger = logger.setup(True)
+from .. import config
+from . import logger
 
+logger = logger.setup(config.DEBUG, "UTILS", config.LOG_PATH)
+
+current_dir = Path(__file__).parent.parent
+localize_path = current_dir / "localize" / config.LOCALIZE / "localize_key.json"
+error_path = current_dir / "localize" / config.LOCALIZE / "errors.json"
+
+ARTIFACTS_DATA = config.ARTIFACTS_DATA
 _time_offset = None
-
-package_dir = os.path.dirname(os.path.abspath(__file__))
-localize_path = os.path.join(package_dir, "localize/localize_ru.json")
-error_path = os.path.join(package_dir, "localize/errors_ru.json")
 
 def translate_data(data): # перевод из указанного файла
     with open(localize_path, 'r', encoding='utf-8') as file:
@@ -30,11 +34,11 @@ def save_file(filename, data): # сохранение файла
             logger.error(f"Ошибка: Файл {filename} не является JSON файлом")
             return False
 
-        if not os.path.exists('data'):
-            os.makedirs('data')
+        if not os.path.exists(ARTIFACTS_DATA):
+            os.makedirs(ARTIFACTS_DATA)
             logger.info("Создана папка 'data'")
 
-        filepath = os.path.join('data', filename)
+        filepath = os.path.join(ARTIFACTS_DATA, filename)
 
         with open(filepath, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
@@ -47,7 +51,7 @@ def save_file(filename, data): # сохранение файла
         return False
 
 def load_file(filename, all_data=False): # загрузка файла
-    filepath = os.path.join('data', filename)
+    filepath = os.path.join(ARTIFACTS_DATA, filename)
     if os.path.exists(filepath):
         with open(filepath, 'r', encoding='utf-8') as f:
             if all_data == True:

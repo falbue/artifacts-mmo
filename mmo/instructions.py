@@ -1,6 +1,7 @@
-from request_mmo import request_mmo
-from utils import *
-from commands import *
+from .utils.request_mmo import request_mmo
+from .utils.utils import *
+from .commands import *
+
 
 
 def character_action(func, character, *args, **kwargs):

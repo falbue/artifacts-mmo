@@ -1,5 +1,5 @@
-from request_mmo import request_mmo
-from utils import *
+from .utils.request_mmo import request_mmo
+from .utils.utils import *
 
 def scan_data(data_type="all", all_data=True, scanning=False):
     if data_type == "all":

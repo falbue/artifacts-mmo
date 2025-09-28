@@ -1,19 +1,14 @@
 import requests
 import json
-import os
-import re
 import time
 
-import os
-from dotenv import load_dotenv
-from utils import *
-import logger
+from .. import config
+from . import logger
+from . import utils
 
-logger = logger.setup(True)
+logger = logger.setup(config.DEBUG, "REQUESTS", config.LOG_PATH)
 
-load_dotenv()
-
-TOKEN = os.getenv("TOKEN")
+TOKEN = config.TOKEN
 
 def process_command(command_body, body):
     command_body = command_body.replace("'", '"')
@@ -43,14 +38,14 @@ def request_mmo(command="", body=None):
         name = base_command[1]
         if name not in ["characters", "bank"]:
             data = request_mmo(f"/characters/{name}")
-            cooldown = check_cooldown(data["data"]["cooldown_expiration"])
+            cooldown = utils.check_cooldown(data["data"]["cooldown_expiration"])
             if cooldown > 0:
                 logger.debug(f"{name} в кулдауне на {cooldown} сек.")
                 time.sleep(cooldown)
 
             if base_command[2] == 'action' and base_command[3] == "move" and len(body) > 1 and isinstance(body, list):
                 character = data['data']
-                body = nearest_object(body, {"x":character["x"],"y":character["y"]})
+                body = utils.nearest_object(body, {"x":character["x"],"y":character["y"]})
 
 
     if body:
@@ -64,7 +59,7 @@ def request_mmo(command="", body=None):
     data = response.json()
     error_int = 0
     if data.get('error'):
-        with open(error_path, 'r', encoding='utf-8') as file:
+        with open(utils.error_path, 'r', encoding='utf-8') as file:
             errors = json.load(file)
             error_int = response.status_code
             error = errors.get(f"{response.status_code}")
@@ -79,4 +74,4 @@ def request_mmo(command="", body=None):
         data = error_int
     return data
 
-set_server_time_offset(request_mmo()["data"]["server_time"])
+utils.set_server_time_offset(request_mmo()["data"]["server_time"])
