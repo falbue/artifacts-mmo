@@ -1,0 +1,206 @@
+from http import HTTPStatus
+from typing import Any, Optional, Union, cast
+
+import httpx
+
+from ...client import AuthenticatedClient, Client
+from ...types import Response, UNSET
+from ... import errors
+
+from ...models.reward_data_response_schema import RewardDataResponseSchema
+from typing import cast
+
+
+
+def _get_kwargs(
+    name: str,
+
+) -> dict[str, Any]:
+    
+
+    
+
+    
+
+    _kwargs: dict[str, Any] = {
+        "method": "post",
+        "url": "/my/{name}/action/task/complete".format(name=name,),
+    }
+
+
+    return _kwargs
+
+
+
+def _parse_response(*, client: Union[AuthenticatedClient, Client], response: httpx.Response) -> Optional[Union[Any, RewardDataResponseSchema]]:
+    if response.status_code == 200:
+        response_200 = RewardDataResponseSchema.from_dict(response.json())
+
+
+
+        return response_200
+
+    if response.status_code == 486:
+        response_486 = cast(Any, None)
+        return response_486
+
+    if response.status_code == 487:
+        response_487 = cast(Any, None)
+        return response_487
+
+    if response.status_code == 488:
+        response_488 = cast(Any, None)
+        return response_488
+
+    if response.status_code == 497:
+        response_497 = cast(Any, None)
+        return response_497
+
+    if response.status_code == 498:
+        response_498 = cast(Any, None)
+        return response_498
+
+    if response.status_code == 499:
+        response_499 = cast(Any, None)
+        return response_499
+
+    if response.status_code == 598:
+        response_598 = cast(Any, None)
+        return response_598
+
+    if client.raise_on_unexpected_status:
+        raise errors.UnexpectedStatus(response.status_code, response.content)
+    else:
+        return None
+
+
+def _build_response(*, client: Union[AuthenticatedClient, Client], response: httpx.Response) -> Response[Union[Any, RewardDataResponseSchema]]:
+    return Response(
+        status_code=HTTPStatus(response.status_code),
+        content=response.content,
+        headers=response.headers,
+        parsed=_parse_response(client=client, response=response),
+    )
+
+
+def sync_detailed(
+    name: str,
+    *,
+    client: AuthenticatedClient,
+
+) -> Response[Union[Any, RewardDataResponseSchema]]:
+    """ Action Complete Task
+
+     Complete a task.
+
+    Args:
+        name (str): Name of your character.
+
+    Raises:
+        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
+        httpx.TimeoutException: If the request takes longer than Client.timeout.
+
+    Returns:
+        Response[Union[Any, RewardDataResponseSchema]]
+     """
+
+
+    kwargs = _get_kwargs(
+        name=name,
+
+    )
+
+    response = client.get_httpx_client().request(
+        **kwargs,
+    )
+
+    return _build_response(client=client, response=response)
+
+def sync(
+    name: str,
+    *,
+    client: AuthenticatedClient,
+
+) -> Optional[Union[Any, RewardDataResponseSchema]]:
+    """ Action Complete Task
+
+     Complete a task.
+
+    Args:
+        name (str): Name of your character.
+
+    Raises:
+        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
+        httpx.TimeoutException: If the request takes longer than Client.timeout.
+
+    Returns:
+        Union[Any, RewardDataResponseSchema]
+     """
+
+
+    return sync_detailed(
+        name=name,
+client=client,
+
+    ).parsed
+
+async def asyncio_detailed(
+    name: str,
+    *,
+    client: AuthenticatedClient,
+
+) -> Response[Union[Any, RewardDataResponseSchema]]:
+    """ Action Complete Task
+
+     Complete a task.
+
+    Args:
+        name (str): Name of your character.
+
+    Raises:
+        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
+        httpx.TimeoutException: If the request takes longer than Client.timeout.
+
+    Returns:
+        Response[Union[Any, RewardDataResponseSchema]]
+     """
+
+
+    kwargs = _get_kwargs(
+        name=name,
+
+    )
+
+    response = await client.get_async_httpx_client().request(
+        **kwargs
+    )
+
+    return _build_response(client=client, response=response)
+
+async def asyncio(
+    name: str,
+    *,
+    client: AuthenticatedClient,
+
+) -> Optional[Union[Any, RewardDataResponseSchema]]:
+    """ Action Complete Task
+
+     Complete a task.
+
+    Args:
+        name (str): Name of your character.
+
+    Raises:
+        errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
+        httpx.TimeoutException: If the request takes longer than Client.timeout.
+
+    Returns:
+        Union[Any, RewardDataResponseSchema]
+     """
+
+
+    return (await asyncio_detailed(
+        name=name,
+client=client,
+
+    )).parsed
