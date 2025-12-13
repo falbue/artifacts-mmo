@@ -1,0 +1,56 @@
+{
+    "bot": {
+        "name": "Артифакты",
+        "short_description": "Взаимодействие с MMO-игрой Артифакты",
+        "description": "Минимальное взаимодействие\n\n@falbue",
+        "username": "falbue_test_bot",
+        "id": 7081992478
+    },
+    "menu": {
+        "main": {
+            "text": "[Главное меню](https://t.me/falbue_test_bot?start=foo)",
+            "keyboard": {
+                "Grand_Exchange": "Рынок"
+            }
+        },
+        "account|{account}": {
+            "loading": "Загрузка аккаунта...",
+            "text": "Аккаунт: {account_data.username}\nУровень: {account_data.level}\nМонеты: {account_data.coins} 💰",
+            "function": "account_info",
+            "keyboard": {
+                "notification": "Прочитано ✅"
+            }
+        },
+        "Grand_Exchange": {
+            "loading": "Обновление рынка...",
+            "raw": 4,
+            "pagination": 20,
+            "text": "Рынок Артифактов",
+            "keyboard": "grand_items",
+            "return": "main"
+        },
+        "sell|{order_id}": {
+            "loading": "Загрузка товара...",
+            "text": "Товар: `{sell_order.code}`\nПродавец: [{sell_order.seller}](deep_link|account-{sell_order.seller})\nЦена за единицу: {sell_order.price} 💰\nКоличество: {sell_order.quantity}\nСоздано: {sell_order.created_at}",
+            "function": "sell_order",
+            "return": "Grand_Exchange"
+        }
+    },
+    "variables": {
+        "tta_return": "‹ Назад",
+        "tta_loading": "Загрузка...",
+        "tta_pagination_back": "‹",
+        "tta_pagination_next": "›",
+        "tta_notification": "Прочитано ✅"
+    },
+    "commands": {
+        "start": {
+            "description": "🔄 Перезапуск бота",
+            "menu": "main"
+        },
+        "account": {
+            "description": "👤 Информация об аккаунте",
+            "menu": "account|{account}"
+        }
+    }
+}
