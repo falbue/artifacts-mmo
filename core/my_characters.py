@@ -23,23 +23,23 @@ class Character:
         if self.token is None or self.token == "":
             raise ValueError("Токен не задан")
 
-        response = request(f"/my/{self.name}", TOKEN=self.token)
+        response = request("/my/characters", TOKEN=self.token)
         if "error" in response:
             raise ValueError(f"Ошибка при получении персонажа: {response['error']}")
 
         data = response.get("data")
-        if not data:
-            raise ValueError(f"Персонаж с именем '{self.name}' не найден")
-
-        for item in data:
-            if item.get("name") == self.name:
-                self.character = item
+        for character in data:
+            if character.get("name") == self.name:
+                self.character = character
+                break
+        if not hasattr(self, "character"):
+            raise ValueError(f"Персонаж с именем {self.name} не найден")
 
     def info(self):
         return self.character
 
     @update_character
-    def move(self, x=None, y=None, map_id=None):
+    def move(self, map_id=None, x=None, y=None):
         if map_id is not None:
             body = {"map_id": map_id}
         else:
