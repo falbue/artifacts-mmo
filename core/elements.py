@@ -32,12 +32,10 @@ def update_elements(element: str, filename: str = "") -> dict:
     return data
 
 
-def get_elements(element: str, ttl_seconds: int = 3600) -> dict:
+def get_elements(element: str, ttl_seconds: int = 0) -> dict:
     """
     Возвращает актуальные данные: либо из файла, либо обновлённые, если срок истёк.
     """
-    if element == "items":
-        ttl_seconds = 0
     file_path = os.path.join(os.path.dirname(__file__), "data", f"{element}.json")
 
     if os.path.exists(file_path):
@@ -59,37 +57,26 @@ def get_elements(element: str, ttl_seconds: int = 3600) -> dict:
 
 
 def find_map_elements(code: str):
-    data = request(f"/maps?content_code={code}")["data"]
-    if data:
-        if len(data) > 1:
-            coordinates = []
-            for d in data:
-                coordinates.append(
+    elements = get_elements("maps")["data"]
+    data = []
+    for map_chunk in elements:
+        if map_chunk["interactions"].get("content"):
+            if map_chunk["interactions"]["content"].get("code") == code:
+                data.append(
                     {
-                        "map_id": d.get("map_id"),
-                        "x": d.get("x"),
-                        "y": d.get("y"),
+                        "map_id": map_chunk.get("map_id"),
+                        "x": map_chunk.get("x"),
+                        "y": map_chunk.get("y"),
                     }
                 )
-            return coordinates
-        else:
-            return {
-                "map_id": data[0].get("map_id"),
-                "x": data[0].get("x"),
-                "y": data[0].get("y"),
-            }
-    return None
+    return data
 
 
-def get_resource(name: str = "", item: str = ""):
+def get_resource(name: str = ""):
     data = get_elements("resources")["data"]
     for resource in data:
         if resource.get("name") == name or resource.get("code") == name:
             return resource
-        elif item:
-            for drop in resource.get("drops", []):
-                if drop.get("code") == item:
-                    return resource
     return None
 
 
