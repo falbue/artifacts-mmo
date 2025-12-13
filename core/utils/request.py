@@ -37,4 +37,5 @@ def request_mmo(
             errors = json.load(file)
         error_message = errors.get(f"{response.status_code}") or data["error"]
         return {"error": {"code": error_code, "message": error_message}}
+
     return data

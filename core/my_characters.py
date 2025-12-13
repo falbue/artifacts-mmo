@@ -28,6 +28,8 @@ class Character:
             raise ValueError(f"Ошибка при получении персонажа: {response['error']}")
 
         data = response.get("data")
+        if data is None:
+            raise ValueError("Некорректный ответ от сервера при получении персонажей")
         for character in data:
             if character.get("name") == self.name:
                 self.character = character
