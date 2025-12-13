@@ -94,3 +94,13 @@ def get_npcs_item(name: str):
         if npc.get("name") == name or npc.get("code") == name:
             return npc
     return None
+
+
+def get_sell_orders(size: int = 100, page: int = 1):
+    data = request(f"/grandexchange/orders?size={size}&page={page}")
+    return data
+
+
+def get_sell_order(order_id: int):
+    data = request(f"/grandexchange/orders/{order_id}")
+    return data
