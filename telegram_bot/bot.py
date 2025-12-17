@@ -22,8 +22,10 @@ def sell_order(tta):
     return data["data"]
 
 
-def get_info_account(tta):
-    data = get_account(tta.account_name)
+def account_info(tta):
+    print(tta)
+    data = get_account(tta.account)
+    print(f"DATA: {data}")
     return data["data"]
 
 

@@ -8,18 +8,18 @@
     },
     "menu": {
         "main": {
-            "text": "[Главное меню](https://t.me/falbue_test_bot?start=foo)",
+            "text": "Главное меню",
             "keyboard": {
-                "Grand_Exchange": "Рынок"
+                "Grand_Exchange": "Рынок",
+                "account|Falbue": "Мой аккаунт"
             }
         },
         "account|{account}": {
+            "send": true,
             "loading": "Загрузка аккаунта...",
-            "text": "Аккаунт: {account_data.username}\nУровень: {account_data.level}\nМонеты: {account_data.coins} 💰",
+            "text": "Аккаунт: {account_info.username}",
             "function": "account_info",
-            "keyboard": {
-                "notification": "Прочитано ✅"
-            }
+            "return": "main"
         },
         "Grand_Exchange": {
             "loading": "Обновление рынка...",
@@ -31,7 +31,7 @@
         },
         "sell|{order_id}": {
             "loading": "Загрузка товара...",
-            "text": "Товар: `{sell_order.code}`\nПродавец: [{sell_order.seller}](deep_link|account-{sell_order.seller})\nЦена за единицу: {sell_order.price} 💰\nКоличество: {sell_order.quantity}\nСоздано: {sell_order.created_at}",
+            "text": "Товар: `{sell_order.code}`\nПродавец: [{sell_order.seller}](deep_link:account|{sell_order.seller})\nЦена за единицу: {sell_order.price} 💰\nКоличество: {sell_order.quantity}\nСоздано: {sell_order.created_at}",
             "function": "sell_order",
             "return": "Grand_Exchange"
         }
@@ -47,10 +47,6 @@
         "start": {
             "description": "🔄 Перезапуск бота",
             "menu": "main"
-        },
-        "account": {
-            "description": "👤 Информация об аккаунте",
-            "menu": "account|{account}"
         }
     }
 }
