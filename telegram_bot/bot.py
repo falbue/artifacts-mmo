@@ -4,6 +4,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import TelegramTextApp
+from TelegramTextApp.TTA import send_menu  # type: ignore
 from core import elements
 from core.accounts import get_account
 
@@ -23,10 +24,12 @@ def sell_order(tta):
 
 
 def account_info(tta):
-    print(tta)
     data = get_account(tta.account)
-    print(f"DATA: {data}")
     return data["data"]
+
+
+def test(tta):
+    send_menu("account|Falbue", "user")
 
 
 if __name__ == "__main__":
