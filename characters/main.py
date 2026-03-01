@@ -91,3 +91,16 @@ class Character:
                 error = f"{code} {message}".strip()
             log.warning(error)
         return {"seconds": 0, "expiration": ""}
+def create_character(name: str, skin: str = "men1") -> Character | None:
+    url = f"{HOST}/characters/create"
+    headers = {"Authorization": f"Bearer {helpers.config.AUTH}"}
+    body = {"name": name, "skin": skin}
+    response = requests.post(url, headers=headers, json=body)
+
+    if response.status_code != 200:
+        error = utils.localize_error(str(response.status_code))
+        log.error(f"Ошибка при создании персонажа {name}: {error}")
+        return None
+
+    log.debug(f"Персонаж {name} успешно создан")
+    return Character(name)
