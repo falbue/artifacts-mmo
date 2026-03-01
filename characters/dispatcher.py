@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections import deque
 from dataclasses import dataclass
-from typing import Callable
+from typing import Callable, Any
 
 import helpers
 
@@ -15,99 +15,102 @@ log = helpers.setup_logger(
 
 @dataclass
 class Task:
+    """Одна задача в очереди персонажа."""
+
     title: str
     run: Callable[[], None]
 
 
-@dataclass
-class MaterialRequest:
-    requester: str
-    code: str
-    quantity: int
-
-
 class CharacterWorker:
     def __init__(self, name: str) -> None:
+        """Создаёт воркера для конкретного персонажа по имени."""
+
         self.character = Character(name)
         self.name = name
         self._queue: deque[Task] = deque()
+        self._next_priority = False
 
-    def enqueue(self, task: Task) -> None:
+    def _enqueue_task(self, task: Task, priority: bool | None = None) -> None:
+        """Внутренний метод постановки задачи в очередь с учётом внешнего приоритета."""
+
+        use_priority = self._next_priority if priority is None else priority
+        self._next_priority = False
+        if use_priority:
+            self._queue.appendleft(task)
+            return
         self._queue.append(task)
 
+    def enqueue(self, task: Task) -> None:
+        """Добавляет задачу в конец очереди."""
+
+        self._enqueue_task(task, priority=False)
+
     def enqueue_priority(self, task: Task) -> None:
-        self._queue.appendleft(task)
+        """Добавляет задачу в начало очереди (высокий приоритет)."""
+
+        self._enqueue_task(task, priority=True)
+
+    def enqueue_call(
+        self,
+        action: Callable[..., None],
+        *args: Any,
+        priority: bool = False,
+        **kwargs: Any,
+    ) -> None:
+        """
+        Вызывает action(*args, **kwargs), помечая задачи этого вызова приоритетом.
+
+        Так можно задавать приоритет извне без отдельного параметра в каждой функции.
+        """
+
+        self._next_priority = priority
+        try:
+            action(*args, **kwargs)
+        finally:
+            self._next_priority = False
 
     def is_idle(self) -> bool:
+        """Проверяет, есть ли задачи в очереди."""
+
         return len(self._queue) == 0
 
     def queue_size(self) -> int:
+        """Возвращает текущее количество задач в очереди."""
+
         return len(self._queue)
 
     def inventory_quantity(self, code: str) -> int:
+        """Возвращает количество предмета code в инвентаре персонажа."""
+
         inventory = self.character.params.get("inventory", [])
         for item in inventory:
             if item.get("code") == code:
                 return item.get("quantity", 0)
         return 0
 
-    def task_move(self, map_id: int) -> Task:
-        return Task(
-            title=f"move:{map_id}",
-            run=lambda: self.character.move(map_id),
+    def gather_resource(self, map_id: int, quantity: int) -> None:
+        """
+        Добавляет составную задачу добычи ресурса в очередь.
+
+        Внутри выполняет:
+        1) перемещение на map_id,
+        2) quantity раз добычу через gathering().
+        """
+
+        def _run() -> None:
+            self.character.move(map_id)
+            for _ in range(max(quantity, 0)):
+                self.character.gathering()
+
+        task = Task(
+            title=f"Ресурс добыт:{map_id}:{quantity}",
+            run=_run,
         )
-
-    def task_gathering(self) -> Task:
-        return Task(
-            title="gathering",
-            run=self.character.gathering,
-        )
-
-    def task_bank(self, code: str, quantity: int, action: str = "deposit") -> Task:
-        return Task(
-            title=f"bank:{action}:{code}:{quantity}",
-            run=lambda: self.character.bank(code, quantity, action),
-        )
-
-    def task_craft(self, code: str, quantity: int = 1) -> Task:
-        return Task(
-            title=f"craft:{code}:{quantity}",
-            run=lambda: self.character.craft(code, quantity),
-        )
-
-    def enqueue_recipe(self, steps: list[dict], repeat: int = 1) -> None:
-        if repeat <= 0:
-            return
-
-        for _ in range(repeat):
-            for step in steps:
-                action = step.get("action")
-
-                if action == "move":
-                    self.enqueue(self.task_move(step["map_id"]))
-                elif action == "gather":
-                    times = int(step.get("times", 1))
-                    for _ in range(max(times, 0)):
-                        self.enqueue(self.task_gathering())
-                elif action == "bank":
-                    self.enqueue(
-                        self.task_bank(
-                            step["code"],
-                            int(step.get("quantity", 1)),
-                            step.get("bank_action", "deposit"),
-                        )
-                    )
-                elif action == "craft":
-                    self.enqueue(
-                        self.task_craft(
-                            step["code"],
-                            int(step.get("quantity", 1)),
-                        )
-                    )
-                else:
-                    raise ValueError(f"Неизвестный шаг рецепта: {action}")
+        self._enqueue_task(task)
 
     def run_next(self) -> bool:
+        """Выполняет одну следующую задачу из очереди. Возвращает True, если задача была."""
+
         if not self._queue:
             return False
 
@@ -116,112 +119,14 @@ class CharacterWorker:
         task.run()
         return True
 
-
-class TeamCoordinator:
-    def __init__(
-        self, bank_map_id: int, resource_nodes: dict[str, int] | None = None
-    ) -> None:
-        self.bank_map_id = bank_map_id
-        self.resource_nodes = resource_nodes or {}
-        self.workers: dict[str, CharacterWorker] = {}
-        self.pending_requests: deque[MaterialRequest] = deque()
-
-    def add_worker(self, name: str) -> CharacterWorker:
-        worker = CharacterWorker(name)
-        self.workers[name] = worker
-        return worker
-
-    def request_material(self, requester: str, code: str, quantity: int) -> None:
-        if quantity <= 0:
-            return
-
-        request = MaterialRequest(requester=requester, code=code, quantity=quantity)
-        self.pending_requests.append(request)
-        self._try_assign_requests()
-
-    def inject_bank_topup(
-        self,
-        worker_name: str,
-        code: str,
-        quantity: int,
-        return_map_id: int | None = None,
-    ) -> None:
-        worker = self.workers[worker_name]
-
-        if return_map_id is not None:
-            worker.enqueue_priority(worker.task_move(return_map_id))
-        worker.enqueue_priority(worker.task_bank(code, quantity, "deposit"))
-        worker.enqueue_priority(worker.task_move(self.bank_map_id))
-
-    def _try_assign_requests(self) -> None:
-        if not self.pending_requests:
-            return
-
-        unresolved: deque[MaterialRequest] = deque()
-
-        while self.pending_requests:
-            request = self.pending_requests.popleft()
-            if not self._assign_request(request):
-                unresolved.append(request)
-
-        self.pending_requests = unresolved
-
-    def _assign_request(self, request: MaterialRequest) -> bool:
-        donor = self._find_inventory_donor(
-            code=request.code,
-            quantity=request.quantity,
-            exclude_name=request.requester,
-        )
-        if donor is not None:
-            self.inject_bank_topup(donor.name, request.code, request.quantity)
-            return True
-
-        helper = self._find_idle_helper(exclude_name=request.requester)
-        node_map_id = self.resource_nodes.get(request.code)
-        if helper is None or node_map_id is None:
-            return False
-
-        helper.enqueue_priority(
-            helper.task_bank(request.code, request.quantity, "deposit")
-        )
-        helper.enqueue_priority(helper.task_move(self.bank_map_id))
-        for _ in range(request.quantity):
-            helper.enqueue_priority(helper.task_gathering())
-        helper.enqueue_priority(helper.task_move(node_map_id))
-        return True
-
-    def _find_inventory_donor(
-        self,
-        code: str,
-        quantity: int,
-        exclude_name: str,
-    ) -> CharacterWorker | None:
-        for name, worker in self.workers.items():
-            if name == exclude_name:
-                continue
-            if worker.inventory_quantity(code) >= quantity:
-                return worker
-        return None
-
-    def _find_idle_helper(self, exclude_name: str) -> CharacterWorker | None:
-        for name, worker in self.workers.items():
-            if name == exclude_name:
-                continue
-            if worker.is_idle():
-                return worker
-        return None
-
     def run_step(self) -> bool:
-        self._try_assign_requests()
+        """Шаг выполнения воркера: сейчас это выполнение одной задачи."""
+        return self.run_next()
 
-        has_work = False
-        for worker in self.workers.values():
-            if worker.run_next():
-                has_work = True
-        return has_work
+    def run(self, max_steps: int | None = None) -> int:
+        """Выполняет очередь задач без лимита или не более max_steps шагов."""
 
-    def run(self, max_steps: int = 1000) -> int:
         steps_done = 0
-        while steps_done < max_steps and self.run_step():
+        while (max_steps is None or steps_done < max_steps) and self.run_step():
             steps_done += 1
         return steps_done
