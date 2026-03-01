@@ -15,18 +15,24 @@ class Character:
     def __init__(self, name: str) -> None:
         self.name = name
         self.header = {"Authorization": f"Bearer {helpers.config.AUTH}"}
-        self.cooldown = {"seconds": 0, "expiration": ""}
 
-    def action(self, url: str, body: dict | None = None) -> dict | None:
-        if self.cooldown.get("seconds", 0) == 0:
-            self.cooldown = self.check_cooldown()
+        raw_character = requests.get(f"{HOST}/characters/{name}").json()
+        if raw_character.get("error"):
+            log.error(f"Ошибка при загрузки персонажа {name}: {raw_character['error']}")
+            return None
+        self.params = raw_character.get("data", {})
+
+    def action(self, url: str, body: dict | list | None = None) -> dict | None:
         base_url = f"{HOST}/my/{self.name}/action{url}"
         response = requests.post(base_url, headers=self.header, json=body)
 
         if response.status_code == 499:
-            time_sleep = utils.difference_time(str(self.cooldown.get("expiration", "")))
-            log.debug(f"{self.name} в кулдауне на {time_sleep} сек.")
-            time.sleep(time_sleep)
+            if self.params.get("cooldown_expiration"):
+                time_sleep = utils.difference_time(
+                    str(self.params.get("cooldown_expiration", ""))
+                )
+                log.debug(f"{self.name} в кулдауне на {time_sleep} сек.")
+                time.sleep(time_sleep)
             response = requests.post(base_url, headers=self.header, json=body)
         data = response.json()
 
@@ -37,60 +43,69 @@ class Character:
             if error is None:
                 message = error_data.get("message", data.get("message", ""))
                 error = f"{code} {message}".strip()
-            log.warning(error)
+            log.warning(f"{self.name} {code} {error}")
             return None
 
         return data.get("data", {})
 
-    def move(self, map_id) -> dict[str, int | str] | None:
+    def move(self, map_id):
         body = {"map_id": map_id}
         data = self.action("/move", body)
-        if data is None:
-            return
-        log.debug(f"{self.name} переместился на {map_id}")
-        if data.get("cooldown"):
-            cooldown = {
-                "seconds": data["cooldown"].get("total_seconds", 0),
-                "expiration": data["cooldown"].get("expiration", ""),
-            }
-            self.cooldown = cooldown
-        return self.cooldown
+        if data is not None:
+            log.debug(f"{self.name} переместился на {map_id}")
+            self.params = data.get("character", {})
 
-    def gathering(self) -> dict[str, int | str] | None:
+    def gathering(self) -> None:
         data = self.action("/gathering")
-        if data is None:
+        if data is not None:
+            log.debug(f"{self.name} добыл ресурс")
+            self.params = data.get("character", {})
+
+    def bank(self, code: str, quantity: int = 1, action: str = "deposit") -> None:
+        """
+        :param code: Код предмета. Если указать gold, будет работа с золотом. all, все предметы (только с deposit)
+        :param quantity: Количество передаваемых предметов. 0 - всё количество предмета
+        :param action: Положить или взять с банка (deposit, withdraw)
+        """
+        if action not in ["deposit", "withdraw"]:
+            log.error(f"Неверное действие для банка: {action}")
             return
-        log.debug(f"{self.name} приступил к добыче ресурса")
-        if data.get("cooldown"):
-            cooldown = {
-                "seconds": data["cooldown"].get("total_seconds", 0),
-                "expiration": data["cooldown"].get("expiration", ""),
-            }
-            self.cooldown = cooldown
-        return self.cooldown
-
-    def check_cooldown(self) -> dict[str, int | str]:
-        response = requests.get(f"{HOST}/my/characters", headers=self.header)
-        data = response.json()
-        if response.status_code == 200:
-            data = data.get("data", [])
-            for char in data:
-                if char.get("name") == self.name:
-                    self.cooldown = {
-                        "seconds": char.get("cooldown", 0),
-                        "expiration": char.get("cooldown_expiration", ""),
-                    }
-                    return self.cooldown
-
+        type_item = "item"
+        if code == "gold":
+            if quantity == 0:
+                body = {quantity: self.params.get("gold", 0)}
+            else:
+                body = {"quantity": quantity}
+            type_item = "gold"
+        elif quantity == 0 and code == "all" and action == "deposit":
+            inventory = self.params.get("inventory", [])
+            body = []
+            for item in inventory:
+                if item.get("code"):
+                    body.append(
+                        {
+                            "code": item.get("code"),
+                            "quantity": item.get("quantity", 0),
+                        }
+                    )
+        elif quantity == 0 or code == "all" and action == "withdraw":
+            log.error("Невозможно взять всё из банка")
+            return
         else:
-            error_data = data.get("error", {})
-            code = error_data.get("code", data.get("code", 0))
-            error = utils.localize_error(code)
-            if error is None:
-                message = error_data.get("message", data.get("message", ""))
-                error = f"{code} {message}".strip()
-            log.warning(error)
-        return {"seconds": 0, "expiration": ""}
+            body = [{"code": code, "quantity": quantity}]
+        data = self.action(f"/bank/{action}/{type_item}", body)
+        if data is not None:
+            log.debug(f"{self.name} использовал банк ({quantity} {code} {action})")
+            self.params = data.get("character", {})
+
+    def craft(self, code: str, quantity: int = 1) -> None:
+        body = {"code": code, "quantity": quantity}
+        data = self.action("/crafting", body)
+        if data is not None:
+            log.debug(f"{self.name} создал {quantity} {code}")
+            self.params = data.get("character", {})
+
+
 def create_character(name: str, skin: str = "men1") -> Character | None:
     url = f"{HOST}/characters/create"
     headers = {"Authorization": f"Bearer {helpers.config.AUTH}"}
