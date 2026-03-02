@@ -72,7 +72,7 @@ def find_map(
     content_code: str,
     page: int = 1,
     size: int = 50,
-):
+) -> list | None:
     url = f"{HOST}/maps?content_code={content_code}&page={page}&size={size}"
     response = requests.get(url)
     if response.status_code != 200:
@@ -105,3 +105,73 @@ def find_nearest_map(player_data: dict, maps: list) -> int | None:
     )
 
     return nearest_map["map_id"]
+
+
+def find_item(code: str):
+    url = f"{HOST}/items/{code}"
+    response = requests.get(url)
+    if response.status_code != 200:
+        error = localize_error(str(response.status_code))
+        log.warning(f"{response.status_code} {error}")
+        return {}
+    data = response.json().get("data", {})
+    if not data:
+        log.warning(f"Предмет с кодом {code} не найден")
+        return None
+    return data
+
+
+def calc_items(data: list) -> int:
+    total = 0
+    for item in data:
+        total += item.get("quantity", 0)
+    return total
+
+
+def dict_quantity_items(data: list) -> dict:
+    items = {}
+    for item in data:
+        items[item["code"]] = item["quantity"]
+    return items
+
+
+def check_bank_item(code: str) -> int | None:
+    url = f"{HOST}/my/bank/items?item_code={code}"
+    headers = {"Authorization": f"Bearer {config.AUTH}"}
+    response = requests.get(url, headers=headers).json()
+    data = response.get("data", [])
+    if data:
+        item = data[0]
+        return item.get("quantity", 0)
+    return None
+
+
+def bank_item(size: int = 50) -> list:
+    url = f"{HOST}/my/bank/items?size={size}"
+    headers = {"Authorization": f"Bearer {config.AUTH}"}
+    response = requests.get(url, headers=headers).json()
+    data = response.get("data", [])
+    return data
+
+
+def find_drop_code(code: str):
+    resource_url = f"{HOST}/resources?drop={code}"
+    monsters_url = f"{HOST}/monsters?drop={code}"
+    data = []
+    resource_res = requests.get(resource_url).json()
+    monster_res = requests.get(monsters_url).json()
+    if resource_res.get("data"):
+        data.extend(resource_res["data"])
+    if monster_res.get("data"):
+        data.extend(monster_res["data"])
+
+    max_rate = 0
+    return_data = None
+    for item in data:
+        for drop in item.get("drops", []):
+            if drop.get("code") == code:
+                if drop.get("rate", 0) > max_rate:
+                    max_rate = drop.get("rate", 0)
+                    return_data = item.get("code")
+
+    return return_data

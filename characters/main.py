@@ -68,7 +68,13 @@ class Character:
             return
         return int(data.get("error", 0))
 
-    def bank(self, code: str, quantity: int = 1, action: str = "deposit") -> None:
+    def bank(
+        self,
+        code: str,
+        quantity: int = 1,
+        action: str = "deposit",
+        list_items: list | None = None,
+    ) -> None:
         """
         :param code: Код предмета. Если указать gold, будет работа с золотом. all, все предметы (только с deposit)
         :param quantity: Количество передаваемых предметов. 0 - всё количество предмета
@@ -78,12 +84,16 @@ class Character:
             log.error(f"Неверное действие для банка: {action}")
             return
         type_item = "item"
-        if code == "gold":
+        if list_items is not None:
+            body = list_items
+
+        elif code == "gold":
             if quantity == 0:
                 body = {quantity: self.params.get("gold", 0)}
             else:
                 body = {"quantity": quantity}
             type_item = "gold"
+
         elif quantity == 0 and code == "all" and action == "deposit":
             inventory = self.params.get("inventory", [])
             body = []
