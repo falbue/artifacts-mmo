@@ -1,12 +1,10 @@
 from characters import CharacterWorker
+from characters.tasks import gather
 
 
-valera = CharacterWorker("valera")
+name = CharacterWorker("oleg")
 
 # Обычная задача в конец очереди.
-valera.gather_resource(277, 10)
+name.task(gather, 277, 10000)
 
-# Приоритет задаём снаружи, без параметра в gather_resource.
-valera.enqueue_call(valera.gather_resource, 277, 3, priority=True)
-
-valera.run()
+name.run()

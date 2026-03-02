@@ -22,7 +22,7 @@ class Character:
             return None
         self.params = raw_character.get("data", {})
 
-    def action(self, url: str, body: dict | list | None = None) -> dict | None:
+    def action(self, url: str, body: dict | list | None = None) -> dict:
         base_url = f"{HOST}/my/{self.name}/action{url}"
         response = requests.post(base_url, headers=self.header, json=body)
 
@@ -34,6 +34,9 @@ class Character:
                 log.debug(f"{self.name} в кулдауне на {time_sleep} сек.")
                 time.sleep(time_sleep)
             response = requests.post(base_url, headers=self.header, json=body)
+            if response.status_code == 499:
+                time.sleep(5)
+                response = requests.post(base_url, headers=self.header, json=body)
         data = response.json()
 
         if response.status_code != 200 or data.get("error"):
@@ -44,22 +47,26 @@ class Character:
                 message = error_data.get("message", data.get("message", ""))
                 error = f"{code} {message}".strip()
             log.warning(f"{self.name} {code} {error}")
-            return None
+            return {"error": code}
 
         return data.get("data", {})
 
-    def move(self, map_id):
+    def move(self, map_id: int) -> None | int:
         body = {"map_id": map_id}
         data = self.action("/move", body)
-        if data is not None:
+        if data.get("error") is None:
             log.debug(f"{self.name} переместился на {map_id}")
             self.params = data.get("character", {})
+            return
+        return int(data.get("error", 0))
 
-    def gathering(self) -> None:
+    def gathering(self) -> None | int:
         data = self.action("/gathering")
-        if data is not None:
+        if data.get("error") is None:
             log.debug(f"{self.name} добыл ресурс")
             self.params = data.get("character", {})
+            return
+        return int(data.get("error", 0))
 
     def bank(self, code: str, quantity: int = 1, action: str = "deposit") -> None:
         """
