@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Callable
 
 from .main import Character
+from helpers import utils
 
 
 @dataclass
@@ -25,10 +26,16 @@ class TaskPlan:
 def drop_bank(character: Character) -> Task:
     """Задача для сброса всего инвентаря в банк."""
 
+    map_id = 334
     return_position = character.params.get("map_id")
+    banks = utils.find_map("bank")
+    if banks is not None:
+        bank = utils.find_nearest_map(character.params, banks)
+        if bank:
+            map_id = bank
 
     def _run() -> TaskPlan | None:
-        character.move(334)
+        character.move(map_id)
         character.bank("all", quantity=0, action="deposit")
         character.move(return_position)
         return None
