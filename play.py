@@ -1,10 +1,16 @@
-from characters import CharacterWorker
-from characters.tasks import gather, craft, withdraw_bank
+import asyncio
+from characters.main import Character
 
 
-name = CharacterWorker("oleg")
+async def main():
+    name = await Character.create("valera")
+    if name is None:
+        return
+    await name.move(277)
+    await name.move(334)
+    await name.bank("copper_bar", 1)
+    await name.bank("all", 0, "deposit")
+    await name.bank("copper_bar", 1, "withdraw")
 
-# Обычная задача в конец очереди.
-name.task(craft, "copper_bar", 56)
 
-name.run()
+asyncio.run(main())
