@@ -33,6 +33,7 @@ class Character:
         """Закрываем сессию, только если создали её сами"""
         if self._own_session and not self.session.closed:
             await self.session.close()
+            log.debug(f"{self.name} отключён")
 
     @classmethod
     async def create(
@@ -69,7 +70,10 @@ class Character:
         async with self.session.post(
             base_url, headers=self.header, json=body
         ) as response:
-            if response.status == 499:
+            if response.status == 200:
+                data = await response.json()
+
+            elif response.status == 499:
                 time_sleep = utils.difference_time(
                     str(self.params.get("cooldown_expiration", ""))
                 )
@@ -78,19 +82,12 @@ class Character:
 
                 async with self.session.post(
                     base_url, headers=self.header, json=body
-                ) as retry_resp:
-                    data = await retry_resp.json()
-            data = await response.json()
-
-        if response.status != 200 or data.get("error"):
-            error_data = data.get("error", {})
-            code = error_data.get("code", data.get("code", 0))
-            error = utils.localize_error(code)
-            if error is None:
-                message = error_data.get("message", data.get("message", ""))
-                error = f"{code} {message}".strip()
-            log.warning(f"{self.name} {code} {error}")
-            return {"error": code}
+                ) as resonse:
+                    data = await resonse.json()
+            else:
+                error = utils.localize_error(str(response.status))
+                log.warning(f"{response.status} {error}")
+                return {"error": response.status}
 
         return data.get("data", {})
 

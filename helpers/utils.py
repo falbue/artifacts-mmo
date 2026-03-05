@@ -10,6 +10,8 @@ HOST = "https://api.artifactsmmo.com"
 
 log = setup_logger("UTILS", config.LOG_PATH, config.LOG_LEVEL)
 
+TIME_DIFF = 0.0
+
 
 def _parse_iso_utc(raw_value: str) -> datetime:
     dt = datetime.fromisoformat(raw_value.replace("Z", "+00:00"))
@@ -32,6 +34,7 @@ def local_time() -> float:
 
 
 def synchronize_time() -> float:
+    global TIME_DIFF
     data = requests.get(f"{HOST}/").json().get("data", {})
 
     if not data:
@@ -51,7 +54,9 @@ def synchronize_time() -> float:
 
     local_dt = datetime.fromtimestamp(local_time(), tz=timezone.utc)
     time_diff = round((server_dt - local_dt).total_seconds(), 2)
-    return time_diff
+    TIME_DIFF = time_diff
+    log.info(f"Синхронизация времени завершена. Разница: {TIME_DIFF} секунд")
+    return max(0.0, round(time_diff, 2))
 
 
 def difference_time(time1: str, time2: str | None = None) -> float:
@@ -65,15 +70,14 @@ def difference_time(time1: str, time2: str | None = None) -> float:
     try:
         if time2 is None:
             local = datetime.fromtimestamp(local_time(), tz=timezone.utc)
-            print(local)
         else:
             local = _parse_iso_utc(time2)
         server = _parse_iso_utc(time1)
     except ValueError as e:
         log.warning(f"Ошибка формата времени: {e}")
         return 0.0
-
-    return max(0.0, round((server - local).total_seconds(), 2))
+    result = max(0.0, round((server - local).total_seconds(), 2))
+    return result - TIME_DIFF
 
 
 def find_map(
