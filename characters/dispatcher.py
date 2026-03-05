@@ -5,7 +5,7 @@ from typing import Callable, Any
 
 import helpers
 
-from .main import Character
+from .request import Character
 from .tasks import Task
 
 log = helpers.setup_logger(
