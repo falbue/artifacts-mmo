@@ -1,96 +1,171 @@
-from __future__ import annotations
+# dispatcher.py
+import asyncio
+import logging
+from typing import Optional, List, Any, Awaitable, Callable
+from dataclasses import dataclass, field
+from enum import Enum
+import time
 
-from collections import deque
-from typing import Callable, Any
-
-import helpers
-
-from .request import Character
-from .tasks import Task
-
-log = helpers.setup_logger(
-    "DISPATCHER", helpers.config.LOG_PATH, helpers.config.LOG_LEVEL
-)
+log = logging.getLogger("DISPATCHER")
 
 
-class CharacterWorker:
-    def __init__(self, name: str) -> None:
-        """Создаёт воркера для конкретного персонажа по имени."""
+class TaskStatus(Enum):
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    SKIPPED = "skipped"
 
-        self.character = Character(name)
+
+@dataclass
+class Task:
+    task_id: str  # Уникальный ID (например, "1", "1.2")
+    name: str
+    action: Callable[..., Awaitable[Any]]
+    args: tuple = field(default_factory=tuple)
+    kwargs: dict = field(default_factory=dict)
+    priority: bool = False
+    dependency: Optional["Task"] = None
+    status: TaskStatus = TaskStatus.PENDING
+    result: Any = None
+    error_code: Optional[int] = None  # Код ошибки от API
+    error_exception: Optional[Exception] = None
+
+
+class TaskManager:
+    def __init__(self, name: str = "DefaultManager"):
         self.name = name
-        self._queue: deque[Task] = deque()
+        self._queue: asyncio.Queue[Task] = asyncio.Queue()
+        self._priority_queue: List[Task] = []
+        self._is_running = False
+        self._worker_task: Optional[asyncio.Task] = None
+        self._lock = asyncio.Lock()
 
-    def _enqueue_task(self, task: Task, priority: bool = False) -> None:
-        """Внутренний метод постановки задачи в очередь."""
+        # Контекст
+        self._ctx_priority: bool = False
+        self._ctx_link: bool = False
+        self._last_task: Optional[Task] = None
 
-        if priority:
-            self._queue.appendleft(task)
+        # Генератор ID
+        self._id_counter = 0
+        self._current_prefix = ""
+
+    async def start(self):
+        if self._is_running:
             return
-        self._queue.append(task)
+        self._is_running = True
+        self._worker_task = asyncio.create_task(self._process_loop())
 
-    def task(
-        self,
-        builder: Callable[..., Task],
-        *args: Any,
-        priority: bool = False,
-        **kwargs: Any,
-    ) -> Task:
-        """Создаёт задачу через builder(...) и сразу ставит её в очередь."""
+    async def stop(self):
+        self._is_running = False
+        if self._worker_task:
+            self._worker_task.cancel()
+            try:
+                await self._worker_task
+            except asyncio.CancelledError:
+                pass
 
-        new_task = builder(self.character, *args, **kwargs)
-        self._enqueue_task(new_task, priority=priority)
-        return new_task
+    def set_context(self, priority: bool, link: bool):
+        self._ctx_priority = priority
+        self._ctx_link = link
+        if not link:
+            self._last_task = None
 
-    def top(self, builder: Callable[..., Task], *args: Any, **kwargs: Any) -> Task:
-        """Обёртка для добавления задачи в начало очереди."""
+    def get_next_id(self) -> str:
+        """Генерирует следующий ID. Если есть префикс (вложенность), добавляет его."""
+        self._id_counter += 1
+        if self._current_prefix:
+            return f"{self._current_prefix}.{self._id_counter}"
+        return str(self._id_counter)
 
-        return self.task(builder, *args, priority=True, **kwargs)
+    def push_prefix(self, prefix: str):
+        """Входит в режим вложенной генерации ID"""
+        old_prefix = self._current_prefix
+        self._current_prefix = prefix
+        return old_prefix
 
-    def is_idle(self) -> bool:
-        """Проверяет, есть ли задачи в очереди."""
+    def pop_prefix(self, old_prefix: str):
+        """Выходит из режима вложенности"""
+        self._current_prefix = old_prefix
+        self._id_counter = (
+            0  # Сбрасываем счетчик для новой ветки? Или оставляем глобальным?
+        )
+        # Лучше сбрасывать локальный счетчик внутри префикса, но глобальный counter пусть растет.
+        # Для простоты: просто восстанавливаем префикс. Счетчик пусть будет глобальным уникальным суффиксом.
+        # Исправление: чтобы ID были красивыми (3.1, 3.2), счетчик лучше сбрасывать при входе в префикс,
+        # но тогда нужно хранить состояние стека.
+        # Упрощенный вариант: используем глобальный счетчик всегда, просто добавляем префикс.
+        # ID будет: 3.105, 3.106. Это тоже уникально.
+        # Если нужны красивые 3.1, 3.2 - нужен стек счетчиков. Сделаем проще:
+        self._current_prefix = old_prefix
 
-        return len(self._queue) == 0
+    async def add_task(self, task: Task) -> Task:
+        # Применяем контекст
+        if self._ctx_priority:
+            task.priority = True
 
-    def queue_size(self) -> int:
-        """Возвращает текущее количество задач в очереди."""
+        if self._ctx_link and task.dependency is None and self._last_task:
+            task.dependency = self._last_task
 
-        return len(self._queue)
+        if self._ctx_link:
+            self._last_task = task
 
-    def inventory_quantity(self, code: str) -> int:
-        """Возвращает количество предмета code в инвентаре персонажа."""
+        async with self._lock:
+            if task.priority:
+                self._priority_queue.insert(0, task)
+            else:
+                await self._queue.put(task)
 
-        inventory = self.character.params.get("inventory", [])
-        for item in inventory:
-            if item.get("code") == code:
-                return item.get("quantity", 0)
-        return 0
+        # Ждем выполнения задачи и возвращаем результат
+        return await self._wait_for_task(task)
 
-    def run_next(self) -> bool:
-        """Выполняет одну следующую задачу из очереди. Возвращает True, если задача была."""
+    async def _wait_for_task(self, task: Task) -> Task:
+        """Ждет завершения конкретной задачи"""
+        while task.status in [TaskStatus.PENDING, TaskStatus.RUNNING]:
+            await asyncio.sleep(0.05)
+        return task
 
-        if not self._queue:
-            return False
+    async def _process_loop(self):
+        while self._is_running:
+            task = await self._get_next_task()
+            if task is None:
+                await asyncio.sleep(0.05)
+                continue
 
-        task = self._queue.popleft()
-        log.debug(f"{self.name} выполняет задачу {task.title}")
-        plan = task.run()
-        if plan is None:
-            return True
+            # Проверка зависимостей
+            if task.dependency:
+                if task.dependency.status != TaskStatus.COMPLETED:
+                    task.status = TaskStatus.SKIPPED
+                    if task.dependency.error_code:
+                        task.error_code = task.dependency.error_code
+                    continue
 
-        if plan.top:
-            for top_task in reversed(plan.top):
-                self._enqueue_task(top_task, priority=True)
+            task.status = TaskStatus.RUNNING
+            try:
+                # Вызываем метод персонажа
+                # Ожидаем, что метод возвращает None (успех) или int (код ошибки)
+                result = await task.action(*task.args, **task.kwargs)
 
-        if plan.back:
-            for back_task in plan.back:
-                self._enqueue_task(back_task, priority=False)
-        return True
+                if result is None:
+                    task.status = TaskStatus.COMPLETED
+                    task.result = result
+                else:
+                    # Считаем любое не-None значение кодом ошибки
+                    task.status = TaskStatus.FAILED
+                    task.error_code = int(result) if isinstance(result, int) else 999
 
-    def run(self, max_steps: int | None = None) -> int:
-        """Выполняет очередь задач без лимита или не более max_steps шагов."""
+            except Exception as e:
+                task.status = TaskStatus.FAILED
+                task.error_exception = e
+                task.error_code = 999  # Системная ошибка
+                log.error(
+                    f"[{self.name}] Исключение в {task.task_id}: {e}", exc_info=True
+                )
 
-        steps_done = 0
-        while (max_steps is None or steps_done < max_steps) and self.run_next():
-            steps_done += 1
-        return steps_done
+    async def _get_next_task(self) -> Optional[Task]:
+        async with self._lock:
+            if self._priority_queue:
+                return self._priority_queue.pop(0)
+            if not self._queue.empty():
+                return await self._queue.get()
+            return None

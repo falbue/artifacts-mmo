@@ -100,7 +100,7 @@ class Character:
             return
         return int(data.get("error", 0))
 
-    async def gathering(self) -> None | int:
+    async def gather(self) -> None | int:
         data = await self.action("/gathering")
         if data.get("error") is None:
             log.debug(f"{self.name} добыл ресурс")

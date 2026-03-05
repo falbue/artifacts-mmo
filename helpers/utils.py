@@ -59,6 +59,9 @@ def synchronize_time() -> float:
     return max(0.0, round(time_diff, 2))
 
 
+synchronize_time()
+
+
 def difference_time(time1: str, time2: str | None = None) -> float:
     """
     Вычисляет разницу во времени между сервером и локальным временем
