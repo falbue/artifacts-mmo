@@ -70,27 +70,16 @@ class Character:
             base_url, headers=self.header, json=body
         ) as response:
             if response.status == 499:
-                if self.params.get("cooldown_expiration"):
-                    time_sleep = utils.difference_time(
-                        str(self.params.get("cooldown_expiration", ""))
-                    )
-                    log.debug(f"{self.name} в кулдауне на {time_sleep} сек.")
-                    await asyncio.sleep(time_sleep)
+                time_sleep = utils.difference_time(
+                    str(self.params.get("cooldown_expiration", ""))
+                )
+                log.debug(f"{self.name} в кулдауне на {time_sleep} сек.")
+                await asyncio.sleep(time_sleep)
 
                 async with self.session.post(
                     base_url, headers=self.header, json=body
                 ) as retry_resp:
                     data = await retry_resp.json()
-
-                if response.status == 499:
-                    if retry_resp.status != 499:
-                        data = await retry_resp.json()
-                    else:
-                        await asyncio.sleep(5)
-                        async with self.session.post(
-                            base_url, headers=self.header, json=body
-                        ) as retry_resp2:
-                            data = await retry_resp2.json()
             data = await response.json()
 
         if response.status != 200 or data.get("error"):

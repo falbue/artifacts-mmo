@@ -11,6 +11,13 @@ HOST = "https://api.artifactsmmo.com"
 log = setup_logger("UTILS", config.LOG_PATH, config.LOG_LEVEL)
 
 
+def _parse_iso_utc(raw_value: str) -> datetime:
+    dt = datetime.fromisoformat(raw_value.replace("Z", "+00:00"))
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
 def localize_error(code: str) -> str | None:
     with open(PATH, "r", encoding="utf-8") as f:
         errors = json.load(f)
@@ -37,15 +44,13 @@ def synchronize_time() -> float:
         return 0.0
 
     try:
-        server_dt = datetime.fromisoformat(server_time_raw.replace("Z", "+00:00"))
+        server_dt = _parse_iso_utc(server_time_raw)
     except ValueError:
         log.warning(f"Некорректный формат времени сервера: {server_time_raw}")
         return 0.0
 
     local_dt = datetime.fromtimestamp(local_time(), tz=timezone.utc)
     time_diff = round((server_dt - local_dt).total_seconds(), 2)
-
-    log.debug("Синхронизация времени завершена")
     return time_diff
 
 
@@ -57,15 +62,18 @@ def difference_time(time1: str, time2: str | None = None) -> float:
     :param time2: Локальное время в формате ISO 8601. Если не указано, используется текущее локальное время
     :return: Разница во времени в секундах
     """
-    if time2 is None:
-        local = datetime.fromtimestamp(local_time(), tz=timezone.utc)
-    else:
-        local = datetime.fromisoformat(time2.replace("Z", "+00:00"))
-    server = datetime.fromisoformat(time1.replace("Z", "+00:00"))
-    time_diff = round((server - local).total_seconds(), 2)
-    if time_diff < 0:
-        return 0
-    return time_diff
+    try:
+        if time2 is None:
+            local = datetime.fromtimestamp(local_time(), tz=timezone.utc)
+            print(local)
+        else:
+            local = _parse_iso_utc(time2)
+        server = _parse_iso_utc(time1)
+    except ValueError as e:
+        log.warning(f"Ошибка формата времени: {e}")
+        return 0.0
+
+    return max(0.0, round((server - local).total_seconds(), 2))
 
 
 def find_map(

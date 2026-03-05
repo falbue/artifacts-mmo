@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from math import ceil
 from typing import Callable
 
-from .main import Character
+from .request import Character
 from helpers import utils
 from helpers import setup_logger
 from helpers.config import config

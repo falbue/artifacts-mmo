@@ -1,5 +1,5 @@
 import asyncio
-from characters.main import Character
+from characters.request import Character
 
 
 async def main():
