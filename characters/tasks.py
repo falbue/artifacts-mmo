@@ -1,9 +1,12 @@
-# tasks_builder.py
-import asyncio
 from typing import Optional, Tuple
 from contextlib import asynccontextmanager
-from .dispatcher import TaskManager, Task, TaskStatus
+from .dispatcher import TaskManager, Task
 from .request import Character
+from objects import maps
+from helpers import logger
+from helpers import config
+
+log = logger.setup_logger("TASKS", config.LOG_PATH, config.LOG_LEVEL)
 
 
 class QuestBuilder:
@@ -48,10 +51,6 @@ class QuestBuilder:
     async def gather(
         self, resource_code: str, quantity: int
     ) -> Tuple[int, Optional[int]]:
-        """
-        Добывает пока не получится или не выйдет ошибка.
-        Возвращает кортеж: (сколько успешно добыто, код ошибки или None).
-        """
         success_count = 0
 
         for i in range(quantity):
@@ -65,7 +64,6 @@ class QuestBuilder:
             completed_task = await self.manager.add_task(task)
 
             if completed_task.error_code is not None:
-                # Прерываем цикл при первой ошибке
                 return success_count, completed_task.error_code
 
             success_count += 1
@@ -83,22 +81,28 @@ class QuestBuilder:
         completed_task = await self.manager.add_task(task)
         return completed_task.error_code
 
-    async def smart_mining_cycle(
-        self,
-        resource_code: str,
-        total_needed: int,
-        work_map: int = 277,
-        bank_map: int = 334,
-        max_fails: int = 3,
-    ):
-        """
-        Простая логика:
-        1. Идем на work_map.
-        2. Добываем total_needed.
-        3. Если ошибка 497 -> Банк (ПРИОРИТЕТ) -> Возврат (ПРИОРИТЕТ) -> Продолжаем добывать остаток.
-        4. Иная ошибка -> Стоп.
-        """
-        remaining = total_needed
+    async def crafting(self, code: str, quantity: int):
+        data = await maps.find_craftable(code)
+        if data is None:
+            return
+
+        if self.char.params.get("level", 0) < data.get("level", 0):
+            log.warning(f"Недостаточный уровень для крафта {code}")
+            return
+
+    async def gathering(self, resource_code: str, quantity: int):
+        remaining = quantity
+
+        work_map = await maps.find_map_resource(self.char.params, resource_code)
+        if work_map is None:
+            return
+
+        banks = await maps.find_map("bank")
+        if banks is None:
+            return
+        bank_map = maps.find_nearest_map(self.char.params, banks)
+        if bank_map is None:
+            return
 
         while remaining > 0:
             await self.move(work_map)
@@ -116,4 +120,4 @@ class QuestBuilder:
                     await self.move(work_map)
                 continue
 
-        return total_needed
+        return quantity

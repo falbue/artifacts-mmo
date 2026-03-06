@@ -1,12 +1,11 @@
-# dispatcher.py
 import asyncio
-import logging
 from typing import Optional, List, Any, Awaitable, Callable
 from dataclasses import dataclass, field
 from enum import Enum
-import time
+from helpers import logger
+from helpers import config
 
-log = logging.getLogger("DISPATCHER")
+log = logger.setup_logger("DISPATCHER", config.LOG_PATH, config.LOG_LEVEL)
 
 
 class TaskStatus(Enum):
@@ -19,7 +18,7 @@ class TaskStatus(Enum):
 
 @dataclass
 class Task:
-    task_id: str  # Уникальный ID (например, "1", "1.2")
+    task_id: str
     name: str
     action: Callable[..., Awaitable[Any]]
     args: tuple = field(default_factory=tuple)
@@ -28,7 +27,7 @@ class Task:
     dependency: Optional["Task"] = None
     status: TaskStatus = TaskStatus.PENDING
     result: Any = None
-    error_code: Optional[int] = None  # Код ошибки от API
+    error_code: Optional[int] = None
     error_exception: Optional[Exception] = None
 
 
@@ -87,20 +86,10 @@ class TaskManager:
     def pop_prefix(self, old_prefix: str):
         """Выходит из режима вложенности"""
         self._current_prefix = old_prefix
-        self._id_counter = (
-            0  # Сбрасываем счетчик для новой ветки? Или оставляем глобальным?
-        )
-        # Лучше сбрасывать локальный счетчик внутри префикса, но глобальный counter пусть растет.
-        # Для простоты: просто восстанавливаем префикс. Счетчик пусть будет глобальным уникальным суффиксом.
-        # Исправление: чтобы ID были красивыми (3.1, 3.2), счетчик лучше сбрасывать при входе в префикс,
-        # но тогда нужно хранить состояние стека.
-        # Упрощенный вариант: используем глобальный счетчик всегда, просто добавляем префикс.
-        # ID будет: 3.105, 3.106. Это тоже уникально.
-        # Если нужны красивые 3.1, 3.2 - нужен стек счетчиков. Сделаем проще:
+        self._id_counter = 0
         self._current_prefix = old_prefix
 
     async def add_task(self, task: Task) -> Task:
-        # Применяем контекст
         if self._ctx_priority:
             task.priority = True
 
@@ -116,7 +105,6 @@ class TaskManager:
             else:
                 await self._queue.put(task)
 
-        # Ждем выполнения задачи и возвращаем результат
         return await self._wait_for_task(task)
 
     async def _wait_for_task(self, task: Task) -> Task:
@@ -142,15 +130,12 @@ class TaskManager:
 
             task.status = TaskStatus.RUNNING
             try:
-                # Вызываем метод персонажа
-                # Ожидаем, что метод возвращает None (успех) или int (код ошибки)
                 result = await task.action(*task.args, **task.kwargs)
 
                 if result is None:
                     task.status = TaskStatus.COMPLETED
                     task.result = result
                 else:
-                    # Считаем любое не-None значение кодом ошибки
                     task.status = TaskStatus.FAILED
                     task.error_code = int(result) if isinstance(result, int) else 999
 

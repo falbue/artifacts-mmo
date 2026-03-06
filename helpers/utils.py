@@ -83,45 +83,6 @@ def difference_time(time1: str, time2: str | None = None) -> float:
     return result - TIME_DIFF
 
 
-def find_map(
-    content_code: str,
-    page: int = 1,
-    size: int = 50,
-) -> list | None:
-    url = f"{HOST}/maps?content_code={content_code}&page={page}&size={size}"
-    response = requests.get(url)
-    if response.status_code != 200:
-        error = localize_error(str(response.status_code))
-        log.warning(f"{response.status_code} {error}")
-        return None
-    data = response.json().get("data", [])
-    if not data:
-        log.warning(f"Карты с контентом {content_code} не найдены")
-        return None
-    return data
-
-
-def find_nearest_map(player_data: dict, maps: list) -> int | None:
-    """
-    Поиск ближайшей карты из списка к текущему положению игрока
-
-    :param player_data: Данные персонажа с координатами 'x' и 'y'
-    :param maps: Список карт с полями 'map_id', 'x', и 'y'
-    :return: map_id ближайшей карты или None, если список карт пуст
-    """
-    if not maps:
-        return None
-
-    player_x = player_data.get("x", 0)
-    player_y = player_data.get("y", 0)
-
-    nearest_map = min(
-        maps, key=lambda m: (m["x"] - player_x) ** 2 + (m["y"] - player_y) ** 2
-    )
-
-    return nearest_map["map_id"]
-
-
 def find_item(code: str):
     url = f"{HOST}/items/{code}"
     response = requests.get(url)
@@ -167,26 +128,3 @@ def bank_item(size: int = 50) -> list:
     response = requests.get(url, headers=headers).json()
     data = response.get("data", [])
     return data
-
-
-def find_drop_code(code: str):
-    resource_url = f"{HOST}/resources?drop={code}"
-    monsters_url = f"{HOST}/monsters?drop={code}"
-    data = []
-    resource_res = requests.get(resource_url).json()
-    monster_res = requests.get(monsters_url).json()
-    if resource_res.get("data"):
-        data.extend(resource_res["data"])
-    if monster_res.get("data"):
-        data.extend(monster_res["data"])
-
-    max_rate = 0
-    return_data = None
-    for item in data:
-        for drop in item.get("drops", []):
-            if drop.get("code") == code:
-                if drop.get("rate", 0) > max_rate:
-                    max_rate = drop.get("rate", 0)
-                    return_data = item.get("code")
-
-    return return_data
