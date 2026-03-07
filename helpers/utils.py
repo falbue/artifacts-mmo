@@ -109,22 +109,3 @@ def dict_quantity_items(data: list) -> dict:
     for item in data:
         items[item["code"]] = item["quantity"]
     return items
-
-
-def check_bank_item(code: str) -> int | None:
-    url = f"{HOST}/my/bank/items?item_code={code}"
-    headers = {"Authorization": f"Bearer {config.AUTH}"}
-    response = requests.get(url, headers=headers).json()
-    data = response.get("data", [])
-    if data:
-        item = data[0]
-        return item.get("quantity", 0)
-    return None
-
-
-def bank_item(size: int = 50) -> list:
-    url = f"{HOST}/my/bank/items?size={size}"
-    headers = {"Authorization": f"Bearer {config.AUTH}"}
-    response = requests.get(url, headers=headers).json()
-    data = response.get("data", [])
-    return data

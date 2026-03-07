@@ -1,28 +1,31 @@
 import asyncio
-from characters import Character
-from characters import TaskManager
-from characters import QuestBuilder
-
+from characters import Character, TaskManager, QuestBuilder
 
 async def main():
-    char = await Character.create("valera")
-    if char is None:
-        return
-    manager = TaskManager(name=char.params["name"])
-    builder = QuestBuilder(manager, char)
-
-    await manager.start()
-
+    configs = [
+        ("oleg", "iron_ore", 1869),
+        ("valera", "ash_wood", 5899),
+        ("ivan", "gudgeon", 6000),
+        ("kaban", "sunflower", 6000),
+    ]
+    sessions, tasks = [], []
     try:
-        result = await builder.gathering("ash_wood", 300)
+        for name, res, qty in configs:
+            char = await Character.create(name)
+            if not char:
+                return
+            manager = TaskManager(name=char.params["name"])
+            await manager.start()
+            builder = QuestBuilder(manager, char)
+            sessions.append((char, manager))
+            tasks.append(builder.gathering(res, qty))
 
-        print(result)
+        print(await asyncio.gather(*tasks))
     except Exception as e:
         print(e)
     finally:
-        await manager.stop()
-        await char.close()
-
+        for char, manager in sessions:
+            await manager.stop()
+            await char.close()
 
 if __name__ == "__main__":
-    asyncio.run(main())

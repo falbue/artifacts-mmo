@@ -1,10 +1,11 @@
 import asyncio
+import socket
 import aiohttp
 import helpers
 from helpers import utils
 
-from aiohttp import TCPConnector
-from aiohttp.resolver import ThreadedResolver
+from aiohttp import TCPConnector, ThreadedResolver
+# from aiohttp.resolver import AsyncResolver
 
 HOST = "https://api.artifactsmmo.com"
 
@@ -18,12 +19,18 @@ class Character:
         self.name = name
         self._own_session = session is None
 
-        connector = TCPConnector(resolver=ThreadedResolver())
+        connector = connector = TCPConnector(
+            family=socket.AF_INET,
+            resolver=ThreadedResolver(),  # Использовать системный резолвер в потоке
+            ttl_dns_cache=300,
+        )
+        timeout = aiohttp.ClientTimeout(total=30, connect=10)
 
         self.session = (
             session
             if session is not None
-            else aiohttp.ClientSession(connector=connector)
+            # else aiohttp.ClientSession(connector=connector, timeout=timeout)
+            else aiohttp.ClientSession(connector=connector, timeout=timeout)
         )
 
         self.header = {"Authorization": f"Bearer {helpers.config.AUTH}"}
