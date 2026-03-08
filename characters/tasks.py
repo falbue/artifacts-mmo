@@ -1,6 +1,6 @@
 from typing import Optional, Tuple
 from contextlib import asynccontextmanager
-from .dispatcher import TaskManager, Task
+from .manager import TaskManager, Task
 from .request import Character
 from objects import maps
 from helpers import logger
@@ -73,6 +73,7 @@ class QuestBuilder:
                 args=(),
             )
             completed_task = await self.manager.add_task(task)
+            print(completed_task)
 
             if completed_task.error_code is not None:
                 return success_count, completed_task.error_code

@@ -96,7 +96,7 @@ class Character:
                 log.warning(f"{response.status} {error}")
                 return {"error": response.status}
 
-        return data.get("data", {})
+        return data
 
     async def move(self, map_id: int) -> None | int:
         body = {"map_id": map_id}
@@ -112,7 +112,7 @@ class Character:
         if data.get("error") is None:
             log.debug(f"{self.name} добыл ресурс")
             self.params = data.get("character", {})
-            return
+            return data["details"].get("items", [])
         return int(data.get("error", 0))
 
     async def bank(
@@ -122,6 +122,13 @@ class Character:
         action: str = "deposit",
         list_items: list | None = None,
     ) -> None:
+        """
+        Params:
+            code: код предмета или "gold", "all" "код предмета"
+            quantity: количество (для gold - сколько золота, для предметов - сколько штук, для "all" - игнорируется)
+            action: "deposit" или "withdraw"
+            list_items: список предметов для массового действия (игнорируется, если code не "all")
+        """
         if action not in ["deposit", "withdraw"]:
             log.error(f"Неверное действие для банка: {action}")
             return
