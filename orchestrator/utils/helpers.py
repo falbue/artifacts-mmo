@@ -2,8 +2,6 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
-import requests
-
 from orchestrator.utils import config
 from orchestrator.utils.logger import setup_logger
 
@@ -35,35 +33,6 @@ def local_time() -> float:
     return datetime.now(timezone.utc).timestamp()
 
 
-def synchronize_time() -> float:
-    global TIME_DIFF
-    data = requests.get(f"{HOST}/").json().get("data", {})
-
-    if not data:
-        log.warning("Не удалось получить данные с сервера для синхронизации времени")
-        return 0.0
-
-    server_time_raw = data.get("server_time")
-    if not server_time_raw:
-        log.warning("Не удалось получить время сервера")
-        return 0.0
-
-    try:
-        server_dt = _parse_iso_utc(server_time_raw)
-    except ValueError:
-        log.warning(f"Некорректный формат времени сервера: {server_time_raw}")
-        return 0.0
-
-    local_dt = datetime.fromtimestamp(local_time(), tz=timezone.utc)
-    time_diff = round((server_dt - local_dt).total_seconds(), 2)
-    TIME_DIFF = time_diff
-    log.info(f"Синхронизация времени завершена. Разница: {TIME_DIFF} секунд")
-    return max(0.0, round(time_diff, 2))
-
-
-synchronize_time()
-
-
 def difference_time(time1: str, time2: str | None = None) -> float:
     """
     Вычисляет разницу во времени между сервером и локальным временем
@@ -85,20 +54,6 @@ def difference_time(time1: str, time2: str | None = None) -> float:
     return result - TIME_DIFF
 
 
-def find_item(code: str):
-    url = f"{HOST}/items/{code}"
-    response = requests.get(url)
-    if response.status_code != 200:
-        error = localize_error(str(response.status_code))
-        log.warning(f"{response.status_code} {error}")
-        return {}
-    data = response.json().get("data", {})
-    if not data:
-        log.warning(f"Предмет с кодом {code} не найден")
-        return None
-    return data
-
-
 def calc_items(data: list) -> int:
     total = 0
     for item in data:
@@ -111,3 +66,7 @@ def dict_quantity_items(data: list) -> dict:
     for item in data:
         items[item["code"]] = item["quantity"]
     return items
+
+
+def print_json(data: dict):
+    print(json.dumps(data, indent=2))

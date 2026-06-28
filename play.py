@@ -1,14 +1,20 @@
-from orchestrator import api_client
+import asyncio
 
-client = api_client.APIClient()
+from orchestrator import client
+from orchestrator.models import Character
+from orchestrator.utils.config import config
+
+lamberjack = Character(config.LAMBERJACK_NAME, "lamberjack")
 
 
 async def main():
-    data = await client.get("/")
-    print(data)
+    await client.init()
+
+    await lamberjack.check()
+    await lamberjack.move(376)
+
+    await client.close()
+    return
 
 
-if __name__ == "__main__":
-    import asyncio
-
-    asyncio.run(main())
+asyncio.run(main())
