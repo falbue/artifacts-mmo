@@ -1,7 +1,7 @@
 import aiohttp
-from helpers.utils import HOST, localize_error
-from helpers import logger
-from helpers import config
+
+from orchestrator.utils import config, logger
+from orchestrator.utils.helpers import HOST, localize_error
 
 log = logger.setup_logger("MAPS", config.LOG_PATH, config.LOG_LEVEL)
 

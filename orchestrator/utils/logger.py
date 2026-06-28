@@ -5,7 +5,7 @@ import sys
 
 def setup_logger(
     name: str,
-    log_path: str,
+    log_path: str | None = None,
     level: str = "DEBUG",
 ) -> logging.Logger:
     logger = logging.getLogger(name)

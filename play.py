@@ -1,16 +1,14 @@
-import asyncio
-from characters import Character, TaskManager, QuestBuilder
+from orchestrator import api_client
+
+client = api_client.APIClient()
 
 
 async def main():
-    char = Character("oleg")
-    manager = TaskManager()
-    tasks = QuestBuilder(manager, char)
-    await manager.start()
-    # await tasks.gather("copper_ore", 1)
-    await tasks.drop_bank()
-    await char.close()
+    data = await client.get("/")
+    print(data)
 
 
 if __name__ == "__main__":
+    import asyncio
+
     asyncio.run(main())
