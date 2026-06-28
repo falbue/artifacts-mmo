@@ -11,10 +11,13 @@ async def main():
     await client.init()
 
     await lamberjack.check()
-    await lamberjack.move(376)
+    await lamberjack.move(274)
+    await asyncio.sleep(lamberjack.cooldown)
+    await lamberjack.move(277)
+    await asyncio.sleep(lamberjack.cooldown)
+    await lamberjack.gather()
 
     await client.close()
-    return
 
 
 asyncio.run(main())

@@ -11,7 +11,10 @@ class Character:
         self.client = client
 
     def _unpack_to_self(self, data):
-        character: dict = data["data"]
+        if data["data"].get("character"):
+            character = data["data"]["character"]
+        else:
+            character = data["data"]
 
         for key, value in character.items():
             if key != "inventory":
@@ -44,3 +47,10 @@ class Character:
             self._unpack_to_self(response["data"])
             log.debug(f"{self.name} переместился на карту {map_id}")
         return
+
+    async def gather(self):
+        response = await self.client.post(f"/my/{self.name}/action/gathering")
+        if response["status"] == 200:
+            self._unpack_to_self(response["data"])
+            log.debug(f"{self.name} добыл")
+        return response["data"]
