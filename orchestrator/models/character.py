@@ -1,14 +1,22 @@
+import asyncio
+from datetime import datetime, timezone
+import math
+
 from orchestrator import client, setup_logger
+from orchestrator.api_client import check_time_diff
 
 log = setup_logger("CHARACTER")
 
 
 class Character:
     def __init__(self, name, role):
-        self.name = name.split(":")[0]
-        self.role = role
-        self.skin = name.split(":")[1]
+        self.name: str = name.split(":")[0]
+        self.role: str = role
+        self.skin: str = name.split(":")[1]
         self.client = client
+        self.cooldown: int = 0
+        self.cooldown_expiration: str = ""
+        self.time_diff: int = asyncio.run(check_time_diff())
 
     def _unpack_to_self(self, data):
         if data["data"].get("character"):
@@ -22,6 +30,19 @@ class Character:
 
         if "inventory" in character:
             self.inventory = character["inventory"]
+
+    def is_available(self):
+        """
+        Проверка доступности персонажа
+        """
+        cooldown = datetime.fromisoformat(
+            self.cooldown_expiration.replace("Z", "+00:00")
+        )
+        local_time = datetime.now(timezone.utc)
+        diff_seconds = (local_time - cooldown).total_seconds()
+        if diff_seconds >= 0:
+            return 0
+        return math.ceil(diff_seconds)
 
     async def create(self):
         data = {"name": self.name, "skin": self.skin}

@@ -1,3 +1,6 @@
+from datetime import datetime, timezone
+import math
+
 import aiohttp
 
 from orchestrator.utils import config, setup_logger
@@ -61,3 +64,15 @@ class APIClient:
 
 
 client = APIClient()
+
+
+async def check_time_diff():
+    await client.init()
+    response = await client.get("/")
+    server_time_str = response["data"].get("data", {}).get("server_time")
+    server_time = datetime.fromisoformat(server_time_str.replace("Z", "+00:00"))
+    local_time_utc = datetime.now(timezone.utc)
+    diff_seconds = (local_time_utc - server_time).total_seconds()
+    await client.close()
+
+    return math.ceil(diff_seconds)
