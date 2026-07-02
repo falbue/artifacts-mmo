@@ -38,7 +38,9 @@ class MovePlanner:
                     target_location=target_map,
                     quantity_total=1,
                     assignee_class=task.assignee_class,
+                    priority=task.priority,
                 )
+                move_task.blocked_by = task.blocked_by.copy()
                 enriched.append(move_task)
                 task.blocked_by.append(move_task.id)
                 current_map = target_map
@@ -46,6 +48,32 @@ class MovePlanner:
             enriched.append(task)
 
         return enriched
+
+    def _topological_sort(self, tasks: list[Task]) -> list[Task]:
+        """Сортировка задач с учетом зависимостей"""
+        task_map = {task.id: task for task in tasks}
+        visited = set()
+        result = []
+
+        def visit(task_id: str):
+            if task_id in visited:
+                return
+            visited.add(task_id)
+
+            task = task_map.get(task_id)
+            if not task:
+                return
+
+            for blocked_by_id in task.blocked_by:
+                if blocked_by_id in task_map:
+                    visit(blocked_by_id)
+
+            result.append(task)
+
+        for task in tasks:
+            visit(task.id)
+
+        return result
 
     async def _get_target_map(self, task: Task) -> list[int]:
         """Узнать на какой карте нужно выполнять задачу"""
@@ -63,7 +91,6 @@ class MovePlanner:
 
         if task.type == TaskType.CRAFT:
             content_code = mapping.get(task.assignee_class)
-            print(task.assignee_class, content_code)
             maps = await self.client.get(
                 "/maps",
                 params={
@@ -71,11 +98,8 @@ class MovePlanner:
                     "content_code": content_code,
                 },
             )
-            map_ids = [
-                map_info.get("map_id")
-                for map_info in maps["data"][0]
-                if map_info.get("map_id")
-            ]
+            maps = maps.get("data", [])
+            map_ids = [maps[0].get("map_id")] if maps else []
             return map_ids
 
         if task.type == TaskType.GATHER:

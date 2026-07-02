@@ -27,7 +27,7 @@ class TaskManager:
 
     async def execute_goal(self, goal: dict, character=None):
         """
-        Выполнить одну цель.
+        Выполнение цели с разбором на задачи, добавлением MOVE и распределением по планировщику
 
         Args:
             goal: {
@@ -43,20 +43,14 @@ class TaskManager:
         log.info(f"Выполнение цели: {goal}")
 
         try:
-            # 1. Resolver создаёт логические задачи
             tasks = await self.resolver.resolve(goal)
-
-            # 2. MovePlanner добавляет MOVE задачи
             tasks = await self.move_planner.enrich_tasks(
                 tasks, character_current_map=character.map_id
             )
 
             log.info(f"Создано {len(tasks)} задач")
 
-            # 3. Добавить в scheduler
             self.scheduler.add_tasks(tasks)
-
-            # 4. Ждать выполнения
             await self._wait_all_tasks_done(tasks)
 
             log.info(f"Goal completed: {goal}")

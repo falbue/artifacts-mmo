@@ -16,7 +16,7 @@ async def character_loop(character, scheduler):
         try:
             cooldown = character.is_available()
             if cooldown > 0:
-                log.debug(f"[{character.name}] ждёт кулдаун {cooldown}s")
+                log.debug(f"{character.name} ждёт кулдаун {cooldown}s")
                 await asyncio.sleep(cooldown + 0.1)
                 continue
 
@@ -31,12 +31,12 @@ async def character_loop(character, scheduler):
             if done:
                 task.status = TaskStatus.DONE
                 scheduler.notify_task_done(character.name, task)
-                log.info(f"[{character.name}] Задача завершена: {task}")
+                log.info(f"{character.name} Задача завершена: {task}")
             else:
                 await task_queue.put(task)
 
         except Exception as e:
-            log.error(f"[{character.name}] Ошибка в цикле: {e}")
+            log.error(f"{character.name} Ошибка в цикле: {e}")
             await asyncio.sleep(1)
 
 
@@ -69,7 +69,7 @@ async def execute_task_tick(character, task) -> bool:
         return await tick_withdraw(character, task)
 
     else:
-        log.error(f"[{character.name}] Неизвестный тип задачи: {task.type}")
+        log.error(f"{character.name} Неизвестный тип задачи: {task.type}")
         return False
 
 
@@ -77,7 +77,7 @@ async def tick_move(character, task) -> bool:
     map_id = task.target_location
     await character.move(map_id)
 
-    log.info(f"{character.name} Переместился на карту {map_id}")
+    log.info(f"{character.name} переместился на карту {map_id}")
     return True
 
 
@@ -89,10 +89,10 @@ async def tick_gather(character, task) -> bool:
     if quantity > 0:
         task.quantity_done += quantity
         log.debug(
-            f"{character.name} Собрал {task.resource}: {task.quantity_done}/{task.quantity_total}"
+            f"{character.name} собрал {task.resource}: {task.quantity_done}/{task.quantity_total}"
         )
     else:
-        log.debug(f"{character.name} Ресурс не выпал, повторяю")
+        log.debug(f"{character.name} ресурс не выпал, повторяю")
 
     return task.is_done()
 

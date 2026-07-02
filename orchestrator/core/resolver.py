@@ -158,7 +158,11 @@ class DependencyResolver:
         }
         if task.type == TaskType.CRAFT:
             craft_data = await self.client.get(f"/items/{task.resource}")
-            role = craft_data.get("data", {}).get("skill")
+            craft = craft_data.get("data", {}).get("craft")
+            if craft is None:
+                role = craft_data.get("data", {}).get("subtype")
+            else:
+                role = craft_data.get("data", {}).get("craft").get("skill")
 
         elif task.type == TaskType.GATHER:
             resource_data = await self.client.get(
@@ -170,7 +174,6 @@ class DependencyResolver:
 
         if role == "Unknown":
             log.warning(f"Неизвестный класс для задачи {task}")
-        print(role, mapping.get(role, "Unknown"))
         return mapping.get(role, "Unknown")
 
     def _calculate_priorities(self):

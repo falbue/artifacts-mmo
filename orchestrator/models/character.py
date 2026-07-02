@@ -72,12 +72,10 @@ class Character:
         )
         if response["status"] == 200:
             self._unpack_to_self(response)
-            log.debug(f"{self.name} переместился на карту {map_id}")
         return
 
     async def gather(self):
         response = await self.client.post(f"/my/{self.name}/action/gathering")
         if response["status"] == 200:
             self._unpack_to_self(response)
-            log.debug(f"{self.name} добыл")
         return response["data"]

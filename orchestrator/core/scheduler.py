@@ -7,7 +7,7 @@ log = setup_logger("SCHEDULER")
 
 
 class Scheduler:
-    """Планировщик задач на основе очереди."""
+    """Планировщик задач на основе очереди"""
 
     def __init__(self, characters: list):
         self.characters = {char.name: char for char in characters}
@@ -16,7 +16,7 @@ class Scheduler:
         self.new_task_event = asyncio.Event()
 
     async def run(self):
-        """Основной цикл: разблокирует задачи и распределяет по очередям."""
+        """Основной цикл: разблокирует задачи и распределяет по очередям"""
         while True:
             try:
                 ready_tasks = [
@@ -45,14 +45,14 @@ class Scheduler:
                 await asyncio.sleep(1)
 
     def _find_available_character(self, task: Task):
-        """Найти свободного персонажа подходящего класса."""
+        """Найти свободного персонажа подходящего класса"""
         for char in self.characters.values():
             if char.role == task.assignee_class and char.is_available() <= 0:
                 return char
         return None
 
     def add_tasks(self, tasks: list[Task]):
-        """Добавить задачи и уведомить планировщик."""
+        """Добавить задачи и уведомить планировщик"""
         for task in tasks:
             self.all_tasks[task.id] = task
             if not task.blocked_by:
@@ -62,7 +62,7 @@ class Scheduler:
         self.new_task_event.set()
 
     def notify_task_done(self, character_name: str, task: Task):
-        """Задача завершена — разблокируем зависимые."""
+        """Задача завершена — разблокируем зависимые"""
         log.info(f"Завершена: {task}")
 
         newly_ready = []
