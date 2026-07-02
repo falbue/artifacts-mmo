@@ -14,8 +14,8 @@ def check_gather(response: dict, item_code: str) -> int:
         True если gather успешен, False если нет.
     """
 
-    if response.get("data", {}).get("details", {}).get("items"):
-        for item in response["data"]["details"]["items"]:
+    if response.get("details", {}).get("items"):
+        for item in response["details"]["items"]:
             if item.get("code") == item_code:
                 return item.get("quantity", 0)
 

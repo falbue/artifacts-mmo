@@ -1,43 +1,66 @@
 import asyncio
 
-from orchestrator.core.runner import character_loop
-from orchestrator.core.scheduler import Scheduler
-from orchestrator import client
+from orchestrator import client, setup_logger
 from orchestrator.models import Character
-from orchestrator.models.task import Task, TaskType
 from orchestrator.utils.config import config
+from orchestrator.core.scheduler import Scheduler
+from orchestrator.core.resolver import DependencyResolver
+from orchestrator.core.move_planner import MovePlanner
+from orchestrator.core.task_manager import TaskManager
 
-# ИСПРАВЛЕНО: правильное написание роли
-lumberjack = Character(config.LAMBERJACK_NAME, "Lumberjack")
+log = setup_logger("TEST")
+miner = Character(config.MINER_NAME, "miner")
 
 
 async def main():
     await client.init()
 
-    # Проверить что персонаж существует
-    await lumberjack.check()
-    print(f"Персонаж: {lumberjack.name}, level: {getattr(lumberjack, 'level', '?')}")
+    await miner.check()
+    log.info(f"Персонаж: {miner.name}, level: {getattr(miner, 'level', '?')}")
 
-    # Создать простую задачу для теста
-    task = Task(
-        type=TaskType.MOVE,
-        resource="map_move",
-        quantity_total=1,
-        target_location=274,
-        assignee_class="Lumberjack",  # Должно совпадать с ролью персонажа
+    scheduler = Scheduler([miner])
+    resolver = DependencyResolver(client)
+    move_planner = MovePlanner(client)
+
+    task_manager = TaskManager(
+        characters=[miner],
+        scheduler=scheduler,
+        resolver=resolver,
+        move_planner=move_planner,
+        achievement_planner=None,
     )
 
-    # Создать планировщик
-    scheduler = Scheduler([lumberjack])
-    scheduler.add_tasks([task])
+    goal = {"type": "craft", "item": "copper_bar", "quantity": 1}
 
-    # ИСПРАВЛЕНО: только один вызов scheduler.run()
-    await asyncio.gather(
-        character_loop(lumberjack, scheduler),
-        scheduler.run(),
-    )
+    try:
+        # Запустить scheduler и runner как отдельные задачи
+        scheduler_task = asyncio.create_task(scheduler.run())
+        runner_task = asyncio.create_task(miner_loop(miner, scheduler))
 
-    await client.close()
+        # Выполнить цель
+        await task_manager.execute_goal(goal)
+
+        # После завершения цели — отменить бесконечные циклы
+        scheduler_task.cancel()
+        runner_task.cancel()
+
+        try:
+            await scheduler_task
+            await runner_task
+        except asyncio.CancelledError:
+            log.info("Scheduler и Runner остановлены")
+
+    except Exception as e:
+        log.error(f"Ошибка: {e}", exc_info=True)
+    finally:
+        await client.close()
+
+
+async def miner_loop(character, scheduler):
+    """Цикл персонажа."""
+    from orchestrator.core.runner import character_loop
+
+    await character_loop(character, scheduler)
 
 
 if __name__ == "__main__":

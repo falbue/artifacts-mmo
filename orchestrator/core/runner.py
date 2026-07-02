@@ -14,22 +14,18 @@ async def character_loop(character, scheduler):
 
     while True:
         try:
-            # Ждём кулдаун
             cooldown = character.is_available()
             if cooldown > 0:
                 log.debug(f"[{character.name}] ждёт кулдаун {cooldown}s")
                 await asyncio.sleep(cooldown + 0.1)
                 continue
 
-            # Берём задачу из очереди (неблокирующе)
             try:
                 task = task_queue.get_nowait()
             except asyncio.QueueEmpty:
-                # Нет задач — ждём немного
                 await asyncio.sleep(0.1)
                 continue
 
-            # Выполняем задачу
             done = await execute_task_tick(character, task)
 
             if done:
@@ -37,7 +33,6 @@ async def character_loop(character, scheduler):
                 scheduler.notify_task_done(character.name, task)
                 log.info(f"[{character.name}] Задача завершена: {task}")
             else:
-                # Задача не завершена — возвращаем в очередь
                 await task_queue.put(task)
 
         except Exception as e:
@@ -89,7 +84,6 @@ async def tick_move(character, task) -> bool:
 async def tick_gather(character, task) -> bool:
     """Собрать один ресурс. Может не выпасть (шанс < 100%)"""
     response = await character.gather()
-
     quantity = check_gather(response, task.resource)
 
     if quantity > 0:

@@ -19,10 +19,10 @@ class Character:
         self.time_diff: int = asyncio.run(check_time_diff())
 
     def _unpack_to_self(self, data):
-        if data["data"].get("character"):
+        if data.get("data", {}).get("character"):
             character = data["data"]["character"]
         else:
-            character = data["data"]
+            character = data
 
         for key, value in character.items():
             if key != "inventory":
@@ -34,14 +34,20 @@ class Character:
     def is_available(self):
         """
         Проверка доступности персонажа
+
+        Returns:
+            0 если свободен
+            положительное число — сколько секунд ждать
         """
         cooldown = datetime.fromisoformat(
             self.cooldown_expiration.replace("Z", "+00:00")
         )
         local_time = datetime.now(timezone.utc)
-        diff_seconds = (local_time - cooldown).total_seconds()
-        if diff_seconds >= 0:
+        diff_seconds = (cooldown - local_time).total_seconds()
+
+        if diff_seconds <= 0:
             return 0
+
         return math.ceil(diff_seconds)
 
     async def create(self):
@@ -65,13 +71,13 @@ class Character:
             f"/my/{self.name}/action/move", {"map_id": map_id}
         )
         if response["status"] == 200:
-            self._unpack_to_self(response["data"])
+            self._unpack_to_self(response)
             log.debug(f"{self.name} переместился на карту {map_id}")
         return
 
     async def gather(self):
         response = await self.client.post(f"/my/{self.name}/action/gathering")
         if response["status"] == 200:
-            self._unpack_to_self(response["data"])
+            self._unpack_to_self(response)
             log.debug(f"{self.name} добыл")
         return response["data"]
